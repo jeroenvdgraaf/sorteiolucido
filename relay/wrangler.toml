@@ -1,0 +1,22 @@
+name = "sorteiolucido-relay"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Sem armazenamento (KV, D1, R2): o relay só repassa pedidos.
+[observability]
+enabled = true
+
+[vars]
+# Lista de TSAs RFC 3161. A entrada ICP-Brasil existe, mas fica desligada (enabled = false) até a
+# implantação ter certificado da empresa e contrato com uma autoridade credenciada (SPEC 6.1).
+TSAS = '''[
+  {"name": "freetsa", "url": "https://freetsa.org/tsr", "enabled": true},
+  {"name": "digicert", "url": "http://timestamp.digicert.com", "enabled": true},
+  {"name": "icp-brasil", "url": "", "enabled": false, "note": "carimbo do tempo ICP-Brasil; preencher url e habilitar por implantação"}
+]'''
+OTS_CALENDARS = '["https://a.pool.opentimestamps.org", "https://b.pool.opentimestamps.org", "https://a.pool.eternitywall.com"]'
+# Endpoint não oficial da Caixa: A CONFIRMAR (ver DECISIONS.md).
+CAIXA_API = "https://servicebus2.caixa.gov.br/portaldeloterias/api/"
+# Origens permitidas (CORS). "*" permite abrir o HTML como arquivo local (origem "null").
+ALLOWED_ORIGINS = '["*"]'
+TIMEOUT_MS = "15000"
