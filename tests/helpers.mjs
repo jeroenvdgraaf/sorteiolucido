@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Jeroen van de Graaf
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT } from "./core_loader.mjs";

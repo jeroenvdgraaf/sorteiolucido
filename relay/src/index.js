@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Jeroen van de Graaf
 // SorteioLúcido · relay de carimbo de tempo (SPEC 6.2), Cloudflare Worker.
 // Só repassa pedidos: nunca recebe a lista de participantes, só o hash (lacre). Sem estado além dos logs.
 //

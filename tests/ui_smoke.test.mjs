@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Jeroen van de Graaf
 // Teste opcional da camada de interface (DOM) com jsdom. É pulado se o jsdom não estiver instalado:
 //   npm i --prefix /tmp/jsdom jsdom@24 && JSDOM_DIR=/tmp/jsdom/node_modules ./run_tests.sh
 import { test, after } from "node:test";

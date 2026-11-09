@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Jeroen van de Graaf
 // DER mínimo: monta o TimeStampReq (RFC 3161) e lê o suficiente do TimeStampResp.
 
 const OID_SHA256 = Uint8Array.of(0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01);

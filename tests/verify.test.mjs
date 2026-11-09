@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Jeroen van de Graaf
 // Conferência (SPEC 9) no núcleo do HTML: certificados de teste, adulterações, legado LucentDraw/1.
 import { test } from "node:test";
 import assert from "node:assert/strict";

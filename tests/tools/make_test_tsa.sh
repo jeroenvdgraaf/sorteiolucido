@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (C) 2026 Jeroen van de Graaf
 # (Re)gera a PKI de TESTE usada pelos testes de carimbo de tempo: CA, certificado e chave da TSA.
 # Somente para testes; nunca use estas chaves para nada real.
 set -eu

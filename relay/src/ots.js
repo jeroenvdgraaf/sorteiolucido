@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Jeroen van de Graaf
 // OpenTimestamps: montagem do arquivo .ots, leitura, junção de árvores e atualização (upgrade).
 // Formato: https://github.com/opentimestamps/python-opentimestamps (core/serialize.py, timestamp.py, op.py)
 

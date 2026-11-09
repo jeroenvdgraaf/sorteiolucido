@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Jeroen van de Graaf
 // Gera tests/fixtures/drand_test_beacons.json: um par de chaves BLS de TESTE (não é a quicknet)
 // e rodadas assinadas no esquema da quicknet (assinatura em G1, chave em G2, DST RFC 9380).
 // Requer @noble/curves@1.6.0 (npm i @noble/curves@1.6.0 num diretório temporário):

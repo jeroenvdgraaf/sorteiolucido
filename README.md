@@ -4,14 +4,14 @@ Sorteios que qualquer pessoa pode conferir sem confiar em quem os organiza (prot
 **LucentDraw/2**, família LucentCrypto). A lista de participantes é lacrada (hash SHA-256) antes de
 existir o valor aleatório; o valor vem de uma fonte pública que ninguém controla (bloco Ethereum,
 farol drand, Mega-Sena ou Loteria Federal); a ordem sai de uma regra publicada. A especificação
-completa está em [`SPEC.md`](SPEC.md); as decisões de implementação, em [`DECISIONS.md`](DECISIONS.md).
+completa está em [`spec/SPEC.md`](spec/SPEC.md); as decisões de implementação, em [`DECISIONS.md`](DECISIONS.md).
 
 ## Conteúdo
 
 | Arquivo | O que é |
 |---|---|
 | `SorteioLucido.html` | O aplicativo: um único arquivo, abas **Sortear** e **Conferir**. |
-| `verify_draw.py` | Verificador de referência em Python (segunda implementação, independente). |
+| `verifier/verify_draw.py` | Verificador de referência em Python (segunda implementação, independente). |
 | `relay/` | Relay de carimbo de tempo (Cloudflare Worker), opcional. |
 | `tests/` | Testes automáticos, todos sem rede. |
 | `reference/LucentDraw.html` | Protótipo em inglês (LucentDraw/1). |
@@ -38,10 +38,10 @@ Requer Python 3.9+ e, para buscar os valores nas fontes, o pacote `requests`.
 
 ```sh
 pip install requests
-python3 verify_draw.py certificado-sorteio-<id>.json
-python3 verify_draw.py certificado.json --rpc https://meu-no.exemplo   # seu próprio nó Ethereum
-python3 verify_draw.py certificado.json --confirm-lottery              # conferi os números a olho
-python3 verify_draw.py certificado.json --tsa-ca freetsa-cacert.pem    # valida a cadeia da TSA
+python3 verifier/verify_draw.py certificado-sorteio-<id>.json
+python3 verifier/verify_draw.py certificado.json --rpc https://meu-no.exemplo   # seu próprio nó Ethereum
+python3 verifier/verify_draw.py certificado.json --confirm-lottery              # conferi os números a olho
+python3 verifier/verify_draw.py certificado.json --tsa-ca freetsa-cacert.pem    # valida a cadeia da TSA
 ```
 
 Saída: 0 = confere, 1 = não confere, 2 = conferência incompleta. A assinatura BLS do drand é
@@ -77,5 +77,10 @@ núcleo do protocolo extraído do próprio HTML (marcadores `CORE-BEGIN`/`CORE-E
 
 ## Licença
 
-A licença ainda será decidida. Até lá, nenhuma licença é concedida. (A cópia do `drand-client`
-em `tests/vendor/` mantém a sua própria licença, Apache-2.0 ou MIT.)
+Copyright (C) 2026 Jeroen van de Graaf.
+
+- **Especificação e verificador** ([`spec/`](spec/) e [`verifier/`](verifier/)): [Apache-2.0](spec/LICENSE). Qualquer pessoa pode usar, adaptar e reimplementar a conferência, inclusive em produtos fechados.
+- **Todo o resto** (a página `SorteioLucido.html`, o relay, os testes): [GNU AGPL-3.0](LICENSE). Quem oferecer uma versão modificada como serviço on-line precisa publicar o código-fonte dessas modificações.
+- **Licença comercial:** para usar a aplicação sem as obrigações da AGPL, entre em contato com o autor.
+- Cada arquivo indica sua licença na linha `SPDX-License-Identifier`. A cópia do `drand-client` em `tests/vendor/` mantém a sua própria licença (Apache-2.0 ou MIT).
+- **Contribuições externas** só são aceitas com um acordo de contribuição (CLA) que preserve a possibilidade de licenciamento comercial.

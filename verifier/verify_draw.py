@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 Jeroen van de Graaf
 """verify_draw.py: verificador de referência do SorteioLúcido (protocolo LucentDraw/2).
 
 Segunda implementação, independente da página HTML, do algoritmo de conferência

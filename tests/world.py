@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (C) 2026 Jeroen van de Graaf
 """Rede simulada para os testes do verify_draw.py (lê tests/fixtures/world.json)."""
 import json
 import os

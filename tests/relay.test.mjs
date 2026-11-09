@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Jeroen van de Graaf
 // Relay (SPEC 6.2) com a rede simulada. As TSAs simuladas respondem com o openssl a partir do
 // TimeStampReq que o próprio relay montou, o que testa a codificação DER do pedido.
 import { test } from "node:test";

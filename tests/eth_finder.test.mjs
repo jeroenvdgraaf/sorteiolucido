@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Jeroen van de Graaf
 // "Primeiro bloco após o lacre" (SPEC 4.1, 10) contra uma cadeia simulada:
 // slots perdidos, cabeça atrasada, lacre no início, meio e fim de um slot, reorganização, retomada tardia.
 import { test } from "node:test";

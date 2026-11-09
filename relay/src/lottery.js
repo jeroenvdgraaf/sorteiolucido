@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Jeroen van de Graaf
 // Normaliza a resposta do endpoint não oficial da Caixa (formato A CONFIRMAR, ver DECISIONS.md).
 const megasenaOk = (n) => Array.isArray(n) && n.length === 6 && n.every((x) => Number.isInteger(x) && x >= 1 && x <= 60) && new Set(n).size === 6;
 const federalOk = (p) => Array.isArray(p) && p.length === 5 && p.every((x) => typeof x === "string" && /^[0-9]{5}$/.test(x));

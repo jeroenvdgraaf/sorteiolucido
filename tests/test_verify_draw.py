@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (C) 2026 Jeroen van de Graaf
 """Testes do verificador de referência verify_draw.py (rodam sem rede)."""
 import base64
 import copy
@@ -12,7 +14,7 @@ import unittest
 from contextlib import redirect_stdout
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(HERE))
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "verifier"))
 sys.path.insert(0, HERE)
 
 import verify_draw as v  # noqa: E402
@@ -339,7 +341,7 @@ class CLI(unittest.TestCase):
             self.assertEqual(json.loads(out)["verdict"], "incompleto")
 
     def test_script_runs_standalone(self):
-        r = subprocess.run([sys.executable, os.path.join(os.path.dirname(HERE), "verify_draw.py"), "--help"],
+        r = subprocess.run([sys.executable, os.path.join(os.path.dirname(HERE), "verifier", "verify_draw.py"), "--help"],
                            capture_output=True, text=True)
         self.assertEqual(r.returncode, 0)
         self.assertIn("--confirm-lottery", r.stdout)

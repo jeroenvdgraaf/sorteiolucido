@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Jeroen van de Graaf
 // Extrai o bloco CORE-BEGIN/CORE-END de SorteioLucido.html e o carrega como módulo no Node.
 // Assim os testes exercitam exatamente o código que a página executa (sem passo de build).
 import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";

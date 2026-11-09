@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (C) 2026 Jeroen van de Graaf -->
 # SorteioLúcido — implementation spec
 
 Protocol: **LucentDraw/2**. Product: **SorteioLúcido** (Brazilian Portuguese UI), part of the LucentCrypto family. The English prototype `LucentDraw.html` (protocol LucentDraw/1) exists and is the starting point.
