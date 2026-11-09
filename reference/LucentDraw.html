@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LucentDraw</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<!-- drand client, pinned by version AND by content hash: the browser refuses a modified copy. -->
+<script type="importmap">
+{
+  "imports": { "drand-client": "https://cdn.jsdelivr.net/npm/drand-client@1.4.2/build/esm/index.mjs" },
+  "integrity": { "https://cdn.jsdelivr.net/npm/drand-client@1.4.2/build/esm/index.mjs": "sha384-NA5O1QMT0tvgBTDU3OWQdlH5HIDoRWPAvKkyh2FmyzQc/hofoTURtZ8qA7B+d4bi" }
+}
+</script>
+<style>
+/* Layout: one working column; a sticky status rail beside it on wide screens. Steps are a real sequence: prepare, seal, draw. */
+:root {
+  --bg: #eef2f3;
+  --surface: #ffffff;
+  --sunk: #e3e9eb;
+  --ink: #13232b;
+  --muted: #566a73;
+  --line: #cdd8dc;
+  --accent: #b5650a;        /* amber: light through glass */
+  --accent-ink: #ffffff;
+  --accent-soft: #fbeedd;
+  --ok: #1d7a4e;  --ok-soft: #dff2e8;
+  --warn: #9a5b00; --warn-soft: #fdf0d6;
+  --bad: #b3261e;  --bad-soft: #fbe3e1;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1417; --surface: #141f24; --sunk: #0f181c; --ink: #e2ebee; --muted: #93a6ad;
+    --line: #26363d; --accent: #f0a443; --accent-ink: #1a1206; --accent-soft: #2e2416;
+    --ok: #5cc995; --ok-soft: #12291f; --warn: #f0b85a; --warn-soft: #2c2312; --bad: #f08a80; --bad-soft: #2e1715;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1417; --surface: #141f24; --sunk: #0f181c; --ink: #e2ebee; --muted: #93a6ad;
+  --line: #26363d; --accent: #f0a443; --accent-ink: #1a1206; --accent-soft: #2e2416;
+  --ok: #5cc995; --ok-soft: #12291f; --warn: #f0b85a; --warn-soft: #2c2312; --bad: #f08a80; --bad-soft: #2e1715;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 15px/1.55 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+.brand { display: grid; gap: 2px; }
+.brand h1 { font: 800 clamp(30px, 5vw, 44px)/1 var(--display); letter-spacing: -0.02em; margin: 0; }
+.brand h1 span { color: var(--accent); }
+.brand p { margin: 0; color: var(--muted); max-width: 60ch; }
+.family { font: 500 12px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+.tabs { display: inline-flex; background: var(--sunk); border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 4px; }
+.tabs button { border: 0; background: transparent; color: var(--muted); font: 600 14px var(--body); padding: 8px 16px; border-radius: 999px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 22px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 16px; min-width: 0; }
+.step-head { display: flex; align-items: baseline; gap: 12px; }
+.step-no { font: 500 13px var(--mono); color: var(--accent); border: 1.5px solid var(--accent); border-radius: 999px; min-width: 28px; height: 28px; display: inline-grid; place-items: center; flex: none; }
+h2 { font: 600 20px/1.2 var(--display); margin: 0; text-wrap: balance; }
+h3 { font: 600 15px/1.3 var(--body); margin: 0; }
+.hint { color: var(--muted); font-size: 13.5px; margin: 0; }
+
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+label.f { display: grid; gap: 6px; font-weight: 600; font-size: 13px; }
+label.f small { font-weight: 400; color: var(--muted); }
+input[type=text], textarea, select {
+  width: 100%; font: 14px/1.5 var(--body); color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px;
+}
+textarea { font-family: var(--mono); font-size: 13.5px; min-height: 180px; resize: vertical; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+input:disabled, textarea:disabled { opacity: .7; }
+
+.sources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 560px) { .sources { grid-template-columns: minmax(0, 1fr); } }
+.src { position: relative; border: 1px solid var(--line); border-radius: 11px; padding: 12px; display: grid; gap: 4px; cursor: pointer; background: var(--bg); }
+.src input { position: absolute; opacity: 0; pointer-events: none; }
+.src b { font-size: 14px; }
+.src span { color: var(--muted); font-size: 12.5px; }
+.src:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.src:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.src:has(input:disabled) { cursor: default; }
+
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button.btn { font: 600 14px var(--body); border-radius: 10px; padding: 10px 16px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button.btn:disabled { opacity: .45; cursor: not-allowed; }
+button.btn.quiet { background: transparent; }
+
+.counter { font: 500 12.5px var(--mono); color: var(--muted); }
+.msg { border-radius: 10px; padding: 10px 12px; font-size: 13.5px; }
+.msg.bad { background: var(--bad-soft); color: var(--bad); }
+.msg.warn { background: var(--warn-soft); color: var(--warn); }
+.msg.ok { background: var(--ok-soft); color: var(--ok); }
+
+/* the seal */
+.seal { border: 1.5px dashed var(--accent); border-radius: 12px; padding: 14px; display: grid; gap: 8px; background: var(--accent-soft); }
+.seal .k { font: 500 11.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.hash { font: 500 13.5px/1.5 var(--mono); word-break: break-all; }
+.hash.big { font-size: 15px; }
+
+dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 13.5px; }
+dl.kv dt { color: var(--muted); }
+dl.kv dd { margin: 0; min-width: 0; font-family: var(--mono); font-size: 13px; word-break: break-all; }
+dl.kv a { color: var(--accent); }
+
+/* status rail */
+.rail { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); }
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.timeline li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; }
+.dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); margin-top: 4px; }
+.timeline li[data-s="active"] .dot { border-color: var(--accent); background: var(--accent-soft); animation: pulse 1.6s ease-in-out infinite; }
+.timeline li[data-s="done"] .dot { border-color: var(--ok); background: var(--ok); }
+.timeline li[data-s="error"] .dot { border-color: var(--bad); background: var(--bad); }
+.timeline .t { font-weight: 600; font-size: 14px; }
+.timeline .d { color: var(--muted); font-size: 12.5px; font-family: var(--mono); word-break: break-all; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 5px var(--accent-soft); } }
+@media (prefers-reduced-motion: reduce) { .timeline li[data-s="active"] .dot { animation: none; } }
+.countdown { font: 800 34px/1 var(--display); font-variant-numeric: tabular-nums; }
+
+/* result */
+.result { overflow-x: auto; }
+table.order { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.order th { text-align: left; font: 500 11.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 10px; border-bottom: 1px solid var(--line); }
+table.order td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.order td.pos { font: 800 18px var(--display); color: var(--accent); width: 54px; font-variant-numeric: tabular-nums; }
+table.order td.key { font: 12.5px var(--mono); color: var(--muted); white-space: nowrap; }
+table.order td.name { font-weight: 500; word-break: break-word; }
+
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checks li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; font-size: 14px; }
+.checks .ic { font: 600 13px var(--mono); border-radius: 6px; text-align: center; height: 22px; line-height: 22px; }
+.checks .pass .ic { background: var(--ok-soft); color: var(--ok); }
+.checks .fail .ic { background: var(--bad-soft); color: var(--bad); }
+.checks .info .ic { background: var(--warn-soft); color: var(--warn); }
+.checks small { display: block; color: var(--muted); font-family: var(--mono); font-size: 12px; word-break: break-all; }
+
+details { border-top: 1px solid var(--line); padding-top: 12px; }
+summary { cursor: pointer; font-weight: 600; }
+pre.code { background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; font: 12.5px/1.55 var(--mono); margin: 10px 0 0; }
+.prose { max-width: 68ch; display: grid; gap: 10px; font-size: 14px; }
+.prose p { margin: 0; }
+code { font-family: var(--mono); font-size: .92em; }
+.example-tag { font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; background: var(--warn-soft); color: var(--warn); border-radius: 999px; padding: 2px 8px; }
+footer { color: var(--muted); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="family">LucentCrypto · verifiable primitives</div>
+      <h1>Lucent<span>Draw</span></h1>
+      <p>A random draw anyone can check. You seal the list first; the randomness comes later from public beacons nobody controls; the order follows from a published rule.</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Mode">
+      <button role="tab" id="tab-run" aria-selected="true" aria-controls="view-run">Run a draw</button>
+      <button role="tab" id="tab-verify" aria-selected="false" aria-controls="view-verify">Verify a certificate</button>
+    </div>
+  </header>
+
+  <!-- ===================== RUN ===================== -->
+  <section id="view-run" role="tabpanel" aria-labelledby="tab-run">
+    <div class="grid">
+      <div style="display:grid;gap:22px;min-width:0">
+
+        <div class="panel" id="prep">
+          <div class="step-head"><span class="step-no">1</span><h2>Prepare the draw</h2></div>
+          <div class="fields">
+            <label class="f" for="title">Title
+              <input type="text" id="title" value="Garage spaces, block B">
+            </label>
+            <label class="f" for="drawId">Draw ID <small>unique; announce it in advance</small>
+              <input type="text" id="drawId" value="garage-2027-blockB">
+            </label>
+          </div>
+          <label class="f" for="cands">
+            <span class="row" style="justify-content:space-between">
+              <span>Participants, one per line <span class="example-tag">example list</span></span>
+              <span class="counter" id="candCount"></span>
+            </span>
+            <textarea id="cands">Apt 101 · Souza
+Apt 102 · Oliveira
+Apt 201 · Pereira
+Apt 202 · Lima
+Apt 301 · Carvalho
+Apt 302 · Ribeiro
+Apt 401 · Almeida
+Apt 402 · Costa</textarea>
+          </label>
+          <div class="msg bad" id="candErr" hidden></div>
+
+          <div class="f" style="display:grid;gap:8px">
+            <span style="font-weight:600;font-size:13px">Randomness source</span>
+            <div class="sources" role="radiogroup" aria-label="Randomness source">
+              <label class="src"><input type="radio" name="src" value="eth" checked><b>Next Ethereum block</b><span>Hash of the first block after the seal, 1 confirmation. About 15–30 seconds.</span></label>
+              <label class="src"><input type="radio" name="src" value="drand"><b>drand</b><span>Threshold beacon, BLS-verified here. About 6–9 seconds.</span></label>
+              <label class="src"><input type="radio" name="src" value="both"><b>Both</b><span>Ethereum block, then a drand round. Neither source alone can steer it. About 40 seconds.</span></label>
+            </div>
+          </div>
+
+          <label class="f" for="contrib">Your own contribution <small>optional: dice rolls, a phrase, anything; it becomes part of the sealed record</small>
+            <input type="text" id="contrib" placeholder="e.g. 4 6 1 3 5 2 2 6">
+          </label>
+
+          <details>
+            <summary>Ethereum connection</summary>
+            <p class="hint" style="margin-top:8px">Public JSON-RPC endpoints, tried in order. No API key needed. Replace them with your own node if you prefer.</p>
+            <label class="f" for="rpcs" style="margin-top:8px">Endpoints, one per line
+              <textarea id="rpcs" style="min-height:80px">https://ethereum-rpc.publicnode.com
+https://eth.llamarpc.com
+https://1rpc.io/eth</textarea>
+            </label>
+          </details>
+
+          <div class="row">
+            <button class="btn primary" id="sealBtn">Seal the draw</button>
+            <span class="hint">After sealing, the list and settings are locked.</span>
+          </div>
+        </div>
+
+        <div class="panel" id="sealPanel" hidden>
+          <div class="step-head"><span class="step-no">2</span><h2>Share the seal now</h2></div>
+          <p class="hint">Post this commitment where people will see it before the randomness appears: the group chat, the meeting screen, the minutes. A commitment shown only after the result proves nothing.</p>
+          <div class="seal">
+            <span class="k">Commitment · SHA-256 of the sealed record</span>
+            <div class="hash big" id="commitHash"></div>
+          </div>
+          <dl class="kv" id="sealFacts"></dl>
+          <div class="row">
+            <button class="btn" id="copySeal">Copy commitment</button>
+            <button class="btn" id="copySpec">Copy seal (JSON)</button>
+            <span class="hint" id="copyNote" role="status"></span>
+          </div>
+          <textarea id="copyFallback" hidden readonly style="min-height:90px"></textarea>
+        </div>
+
+        <div class="panel" id="resultPanel" hidden>
+          <div class="step-head"><span class="step-no">3</span><h2 id="resultTitle">Result</h2></div>
+          <dl class="kv" id="resultFacts"></dl>
+          <div class="result">
+            <table class="order">
+              <thead><tr><th>Pos.</th><th>Participant</th><th>Sort key</th></tr></thead>
+              <tbody id="orderBody"></tbody>
+            </table>
+          </div>
+          <div class="row">
+            <button class="btn primary" id="dlRecord">Download draw certificate</button>
+            <button class="btn" id="copyRecord">Copy draw certificate</button>
+            <button class="btn quiet" id="newDraw">Start a new draw</button>
+          </div>
+          <p class="hint">Anyone can check this draw: open LucentDraw, choose <b>Verify a certificate</b> and paste the record. The check fetches both beacons again on its own.</p>
+        </div>
+      </div>
+
+      <aside class="panel rail" aria-live="polite">
+        <h3>Status</h3>
+        <div id="cdWrap" hidden><div class="hint" id="cdLabel">Randomness expected in</div><div class="countdown" id="countdown">--</div></div>
+        <ol class="timeline" id="timeline">
+          <li data-s="active" id="tl-prep"><span class="dot"></span><div><div class="t">Prepare</div><div class="d">Enter the list and pick a source</div></div></li>
+          <li data-s="idle" id="tl-seal"><span class="dot"></span><div><div class="t">Seal</div><div class="d">Record locked and hashed</div></div></li>
+          <li data-s="idle" id="tl-drand"><span class="dot"></span><div><div class="t">drand round</div><div class="d">Not used yet</div></div></li>
+          <li data-s="idle" id="tl-eth"><span class="dot"></span><div><div class="t">Ethereum block</div><div class="d">Not used yet</div></div></li>
+          <li data-s="idle" id="tl-result"><span class="dot"></span><div><div class="t">Order computed</div><div class="d">From seal + randomness</div></div></li>
+        </ol>
+        <div class="msg bad" id="runErr" hidden></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===================== VERIFY ===================== -->
+  <section id="view-verify" role="tabpanel" aria-labelledby="tab-verify" hidden>
+    <div class="grid">
+      <div class="panel">
+        <div class="step-head"><h2>Verify a draw certificate</h2></div>
+        <p class="hint">Paste a certificate produced by LucentDraw. This page recomputes the commitment, fetches the beacons again on its own, checks drand's signature, and recomputes the order.</p>
+        <label class="f" for="recIn">Draw certificate (JSON)
+          <textarea id="recIn" placeholder='{"spec": {...}, "commitment": "...", ...}'></textarea>
+        </label>
+        <div class="row">
+          <button class="btn primary" id="verifyBtn">Verify</button>
+          <label class="btn" for="recFile" style="display:inline-block">Load file…</label>
+          <input type="file" id="recFile" accept=".json,application/json" hidden>
+        </div>
+        <ul class="checks" id="checks"></ul>
+
+        <details>
+          <summary>The rule, so you can check without this page</summary>
+          <div class="prose" style="margin-top:10px">
+            <p>Everything is SHA-256 over UTF-8 text. <code>C</code> is the hash of the sealed record as canonical JSON (keys sorted, no spaces). The Ethereum value is the hash of the first block whose timestamp is after <code>notBefore</code>, with one confirmation. The seed hashes the label, <code>C</code>, that block hash and the drand randomness, one per line, lowercase hex without <code>0x</code>, with <code>-</code> for an unused source. Each participant gets the key <code>H("LucentDraw/1\nkey\n" + seed + "\n" + name)</code>, and the order is ascending by key.</p>
+            <p>The same check in a few lines of Python:</p>
+          </div>
+<pre class="code">import hashlib, json
+H = lambda s: hashlib.sha256(s.encode()).hexdigest()
+rec  = json.load(open("draw-certificate.json"))
+spec = rec["spec"]
+C    = H(json.dumps(spec, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
+ra   = rec["randomness"].get("eth", {}).get("hash", "-")         # check on any Ethereum node
+dr   = rec["randomness"].get("drand",  {}).get("randomness", "-") # check at api.drand.sh
+seed = H("LucentDraw/1\nseed\n" + C + "\n" + ra + "\n" + dr)
+order = sorted(spec["candidates"], key=lambda n: H("LucentDraw/1\nkey\n" + seed + "\n" + n))
+print(C == rec["commitment"], order == rec["order"])</pre>
+        </details>
+      </div>
+
+      <aside class="panel rail">
+        <h3>What a pass means</h3>
+        <div class="prose" style="font-size:13.5px">
+          <p>The order follows from the sealed list and from two public random values, and nobody could choose those values after seeing the list.</p>
+          <p>One thing this page cannot check for you: that the commitment was really shared before the target round and block. Look where it was posted, and compare the time.</p>
+          <p>The drand value is checked against the quicknet public key with a BLS signature check. For Ethereum, the page checks that the block is the first one after the seal and still on the canonical chain, using your endpoints; for full independence, use your own node.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <footer>LucentDraw/1 · part of LucentCrypto. Runs entirely in your browser; nothing is sent anywhere except requests to drand and to the Ethereum endpoints listed.</footer>
+</div>
+
+<script type="module">
+// ---------------------------------------------------------------- CORE-BEGIN
+// Pure functions: the whole protocol. Kept free of DOM access so they can be tested and re-implemented.
+const VERSION = "LucentDraw/1";
+const QUICKNET = {
+  hash: "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+  genesis: 1692803367, period: 3,
+  url: "https://api.drand.sh/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+};
+const ETH = { genesis: 1606824023, slot: 12, confirmations: 1 };
+const DRAND_LEAD = { drand: 6000, both: 36000 };
+
+async function sha256hex(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Canonical JSON: object keys sorted, no whitespace. Matches Python json.dumps(sort_keys=True, separators=(",",":"), ensure_ascii=False).
+function canon(v) {
+  if (Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
+  if (v && typeof v === "object") {
+    return "{" + Object.keys(v).sort().map(k => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}";
+  }
+  return JSON.stringify(v);
+}
+
+// Names: Unicode NFC, trimmed, blank lines dropped, duplicates rejected.
+function parseNames(text) {
+  const names = [], seen = new Map(), dups = [];
+  text.split(/\r?\n/).forEach(line => {
+    const n = line.normalize("NFC").trim();
+    if (!n) return;
+    if (seen.has(n)) dups.push(n); else seen.set(n, true);
+    names.push(n);
+  });
+  return { names, dups };
+}
+
+const normHex = h => (h || "").toLowerCase().replace(/^0x/, "");
+
+function drandRoundAt(ms) { return Math.floor((ms - QUICKNET.genesis * 1000) / (QUICKNET.period * 1000)) + 1; }
+function drandRoundTime(r) { return (QUICKNET.genesis + (r - 1) * QUICKNET.period) * 1000; }
+
+const commitmentOf = spec => sha256hex(canon(spec));
+
+// Ethereum slots start every 12 s; a block's timestamp is exactly its slot's start.
+function ethNextSlotTime(ms) { return (ETH.genesis + (Math.floor((ms / 1000 - ETH.genesis) / ETH.slot) + 1) * ETH.slot) * 1000; }
+
+function computeSeed(C, ethHashHex, drandHex) {
+  return sha256hex([VERSION, "seed", C, ethHashHex ? normHex(ethHashHex) : "-", drandHex ? normHex(drandHex) : "-"].join("\n"));
+}
+
+async function computeOrder(seed, names) {
+  const rows = await Promise.all(names.map(async name => ({ name, key: await sha256hex([VERSION, "key", seed, name].join("\n")) })));
+  rows.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  return rows;
+}
+// ---------------------------------------------------------------- CORE-END
+
+// ---------------------------------------------------------------- network
+let drandMod = null;
+async function drandLib() {
+  if (!drandMod) drandMod = await import("drand-client");
+  return drandMod;
+}
+// Returns a beacon whose BLS signature the library has verified against the quicknet public key.
+async function fetchDrandRound(round) {
+  const lib = await drandLib();
+  const client = lib.quicknetClient();
+  const b = await lib.fetchBeacon(client, round);
+  if (b.round !== round) throw new Error("drand returned round " + b.round + " instead of " + round);
+  // Redundant check: quicknet randomness is SHA-256 of the signature.
+  const sig = b.signature;
+  const bytes = new Uint8Array(sig.match(/../g).map(h => parseInt(h, 16)));
+  const r = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), x => x.toString(16).padStart(2, "0")).join("");
+  if (r !== normHex(b.randomness)) throw new Error("drand randomness does not match its signature");
+  return { round: b.round, randomness: normHex(b.randomness), signature: normHex(b.signature) };
+}
+
+function rpcList() {
+  return document.getElementById("rpcs").value.split(/\s+/).map(s => s.trim()).filter(Boolean);
+}
+async function rpc(method, params) {
+  let last = null;
+  for (const url of rpcList()) {
+    try {
+      const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
+      if (!res.ok) throw new Error(url + " answered " + res.status);
+      const j = await res.json();
+      if (j.error) throw new Error(url + ": " + (j.error.message || "error"));
+      return j.result;
+    } catch (e) { last = e; }
+  }
+  throw new Error("No Ethereum endpoint answered" + (last ? " (" + last.message + ")" : ""));
+}
+const ethHead = async () => parseInt(await rpc("eth_blockNumber", []), 16);
+async function ethBlock(n) {
+  const b = await rpc("eth_getBlockByNumber", ["0x" + n.toString(16), false]);
+  if (!b) return null;
+  return { number: parseInt(b.number, 16), hash: normHex(b.hash), timestamp: parseInt(b.timestamp, 16) };
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ---------------------------------------------------------------- UI helpers
+const $ = id => document.getElementById(id);
+function setStep(id, state, detail) {
+  const li = $(id); li.dataset.s = state;
+  if (detail !== undefined) li.querySelector(".d").textContent = detail;
+}
+function kv(dl, pairs) {
+  dl.replaceChildren();
+  for (const [k, v, href] of pairs) {
+    const dt = document.createElement("dt"); dt.textContent = k;
+    const dd = document.createElement("dd");
+    if (href) { const a = document.createElement("a"); a.href = href; a.target = "_blank"; a.rel = "noopener"; a.textContent = v; dd.append(a); }
+    else dd.textContent = v;
+    dl.append(dt, dd);
+  }
+}
+function showErr(el, text) { el.textContent = text; el.hidden = !text; }
+async function copyText(text, note) {
+  try { await navigator.clipboard.writeText(text); note.textContent = "Copied"; setTimeout(() => (note.textContent = ""), 2000); }
+  catch { const t = $("copyFallback"); t.value = text; t.hidden = false; t.select(); note.textContent = "Select and copy the text below"; }
+}
+function download(name, text) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+  a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const fmtTime = ms => new Date(ms).toISOString().replace(".000", "");
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem("lucentdraw.current") || "null"); } catch { return null; } },
+  set(v) { try { localStorage.setItem("lucentdraw.current", JSON.stringify(v)); } catch {} },
+  clear() { try { localStorage.removeItem("lucentdraw.current"); } catch {} },
+};
+
+// ---------------------------------------------------------------- tabs
+for (const [tab, view] of [["tab-run", "view-run"], ["tab-verify", "view-verify"]]) {
+  $(tab).addEventListener("click", () => {
+    for (const [t, v] of [["tab-run", "view-run"], ["tab-verify", "view-verify"]]) {
+      $(t).setAttribute("aria-selected", String(t === tab)); $(v).hidden = v !== view;
+    }
+  });
+}
+
+// ---------------------------------------------------------------- prepare
+function refreshCount() {
+  const { names, dups } = parseNames($("cands").value);
+  $("candCount").textContent = names.length + " participant" + (names.length === 1 ? "" : "s");
+  showErr($("candErr"), dups.length ? "Each name must be unique. Repeated: " + [...new Set(dups)].join(", ") : "");
+}
+$("cands").addEventListener("input", refreshCount);
+refreshCount();
+
+function lockForm(locked) {
+  for (const id of ["title", "drawId", "cands", "contrib", "rpcs", "sealBtn"]) $(id).disabled = locked;
+  document.querySelectorAll('input[name="src"]').forEach(r => (r.disabled = locked));
+}
+
+let current = null;     // { spec, commitment, sealedAt, randomness, seed, order }
+let ticker = null;
+
+$("sealBtn").addEventListener("click", async () => {
+  showErr($("runErr"), "");
+  const { names, dups } = parseNames($("cands").value);
+  const drawId = $("drawId").value.normalize("NFC").trim();
+  const title = $("title").value.normalize("NFC").trim();
+  if (!drawId) return showErr($("runErr"), "Give the draw an ID before sealing. Announce it in advance, so nobody can run the same draw twice.");
+  if (names.length < 2) return showErr($("runErr"), "Add at least two participants.");
+  if (dups.length) return showErr($("runErr"), "Each name must be unique before sealing.");
+  const mode = document.querySelector('input[name="src"]:checked').value;
+
+  lockForm(true);
+  $("sealBtn").textContent = "Sealing…";
+  try {
+    const now = Date.now();
+    const sources = {};
+    if (mode !== "drand") {
+      await ethHead(); // fail early if no endpoint answers
+      // The target is defined by time, not by number: the first block whose slot starts after the seal.
+      sources.eth = { chain: "ethereum-mainnet", rule: "first block with timestamp > notBefore", notBefore: Math.floor(now / 1000), confirmations: ETH.confirmations, value: "block hash" };
+    }
+    if (mode !== "eth") {
+      // In "both", the drand round falls after the Ethereum block is confirmed, so that block's builder cannot know it.
+      sources.drand = { chain: "quicknet", chainHash: QUICKNET.hash, round: drandRoundAt(now + DRAND_LEAD[mode]) };
+    }
+    const spec = { v: VERSION, id: drawId, title, candidates: names, contribution: $("contrib").value.normalize("NFC").trim(), sources };
+    const commitment = await commitmentOf(spec);
+    current = { spec, commitment, sealedAt: new Date(now).toISOString(), randomness: {} };
+    store.set(current);
+    showSeal();
+    await waitAndDraw();
+  } catch (e) {
+    showErr($("runErr"), e.message + ". Nothing was sealed; check the connection and try again.");
+    lockForm(false); current = null; store.clear();
+  } finally {
+    $("sealBtn").textContent = "Seal the draw";
+  }
+});
+
+function showSeal() {
+  const { spec, commitment, sealedAt } = current;
+  $("sealPanel").hidden = false;
+  $("commitHash").textContent = commitment;
+  const facts = [["Draw ID", spec.id], ["Participants", String(spec.candidates.length)], ["Sealed at", sealedAt]];
+  if (spec.sources.drand) facts.push(["drand round", "#" + spec.sources.drand.round + " · due " + fmtTime(drandRoundTime(spec.sources.drand.round))]);
+  if (spec.sources.eth) facts.push(["Ethereum block", "first block after " + fmtTime(spec.sources.eth.notBefore * 1000) + ", + " + spec.sources.eth.confirmations + " confirmation"]);
+  kv($("sealFacts"), facts);
+  setStep("tl-prep", "done", spec.candidates.length + " participants");
+  setStep("tl-seal", "done", commitment.slice(0, 16) + "…");
+  setStep("tl-drand", spec.sources.drand ? "active" : "idle", spec.sources.drand ? "Waiting for round #" + spec.sources.drand.round : "Not used in this draw");
+  setStep("tl-eth", spec.sources.eth ? "active" : "idle", spec.sources.eth ? "Waiting for the next slot" : "Not used in this draw");
+  startCountdown();
+}
+
+function startCountdown() {
+  clearInterval(ticker);
+  const s = current.spec.sources;
+  const ethDue = s.eth ? ethNextSlotTime(s.eth.notBefore * 1000 + 999) + s.eth.confirmations * ETH.slot * 1000 + 4000 : 0;
+  const due = Math.max(s.drand ? drandRoundTime(s.drand.round) : 0, ethDue);
+  $("cdWrap").hidden = false;
+  const tick = () => {
+    const left = Math.max(0, Math.round((due - Date.now()) / 1000));
+    $("countdown").textContent = left > 0 ? left + " s" : "any moment";
+  };
+  tick(); ticker = setInterval(tick, 500);
+}
+
+async function waitDrand(round) {
+  const due = drandRoundTime(round);
+  while (Date.now() < due + 400) await sleep(Math.min(1000, due + 400 - Date.now()));
+  let tries = 0, lastErr;
+  while (tries++ < 120) {
+    try { return await fetchDrandRound(round); }
+    catch (e) { lastErr = e; if (/does not match|instead of/.test(e.message)) throw e; await sleep(1500); }
+  }
+  throw new Error("drand round " + round + " could not be fetched (" + (lastErr?.message || "timeout") + ")");
+}
+// Finds the first canonical block whose timestamp is after notBefore, then waits for confirmations.
+async function findEthTarget(notBefore) {
+  let n = await ethHead();
+  let blk = await ethBlock(n);
+  if (!blk || blk.timestamp <= notBefore) return { pending: true, head: n };
+  while (true) {                       // walk back: usually 0 or 1 step
+    const prev = await ethBlock(n - 1);
+    if (!prev || prev.timestamp <= notBefore) return { block: blk, parentTimestamp: prev ? prev.timestamp : null };
+    n -= 1; blk = prev;
+  }
+}
+async function waitEth(spec) {
+  let tries = 0;
+  while (tries++ < 200) {
+    try {
+      const t = await findEthTarget(spec.notBefore);
+      if (t.pending) setStep("tl-eth", "active", "Head #" + t.head + ", waiting for the next slot");
+      else {
+        const head = await ethHead();
+        const conf = head - t.block.number;
+        if (conf >= spec.confirmations) {
+          const again = await ethBlock(t.block.number);        // re-read: still canonical?
+          if (again && again.hash === t.block.hash) return { ...t.block, parentTimestamp: t.parentTimestamp, confirmations: conf };
+        } else setStep("tl-eth", "active", "Block #" + t.block.number + " produced, waiting for " + spec.confirmations + " confirmation");
+      }
+    } catch { /* retry */ }
+    await sleep(2000);
+  }
+  throw new Error("No Ethereum block after the seal could be read with " + spec.confirmations + " confirmation");
+}
+
+async function waitAndDraw() {
+  const s = current.spec.sources;
+  const jobs = [];
+  if (current.randomness.drand) setStep("tl-drand", "done", "#" + current.randomness.drand.round + " · signature verified");
+  if (current.randomness.eth) setStep("tl-eth", "done", "#" + current.randomness.eth.number + " · " + current.randomness.eth.hash.slice(0, 16) + "…");
+  if (s.drand && !current.randomness.drand) jobs.push(waitDrand(s.drand.round).then(d => {
+    current.randomness.drand = d; store.set(current);
+    setStep("tl-drand", "done", "#" + d.round + " · " + d.randomness.slice(0, 16) + "… · signature verified");
+  }));
+  if (s.eth && !current.randomness.eth) jobs.push(waitEth(s.eth).then(b => {
+    current.randomness.eth = b; store.set(current);
+    setStep("tl-eth", "done", "#" + b.number + " · " + b.hash.slice(0, 16) + "…");
+  }));
+  try { await Promise.all(jobs); }
+  catch (e) {
+    clearInterval(ticker);
+    if (!current.randomness.drand && s.drand) setStep("tl-drand", "error");
+    if (!current.randomness.eth && s.eth) setStep("tl-eth", "error");
+    showErr($("runErr"), e.message + ". The seal stays valid: reload the page to keep waiting for the same targets.");
+    return;
+  }
+  await finish();
+}
+
+async function finish() {
+  clearInterval(ticker); $("cdWrap").hidden = true;
+  const r = current.randomness;
+  current.seed = await computeSeed(current.commitment, r.eth?.hash, r.drand?.randomness);
+  const rows = await computeOrder(current.seed, current.spec.candidates);
+  current.order = rows.map(x => x.name);
+  current.v = VERSION;
+  store.set(current);
+  setStep("tl-result", "done", "seed " + current.seed.slice(0, 16) + "…");
+  renderResult(rows);
+}
+
+function renderResult(rows) {
+  const { spec, randomness: r } = current;
+  $("resultPanel").hidden = false;
+  $("resultTitle").textContent = spec.title ? "Result · " + spec.title : "Result";
+  const facts = [["Commitment", current.commitment]];
+  if (r.drand) facts.push(["drand round", "#" + r.drand.round + " · " + r.drand.randomness, QUICKNET.url + "/public/" + r.drand.round]);
+  if (r.eth) facts.push(["Ethereum block", "#" + r.eth.number + " · " + fmtTime(r.eth.timestamp * 1000) + " · " + r.eth.hash, "https://etherscan.io/block/" + r.eth.number]);
+  if (r.drand && r.eth && r.eth.timestamp * 1000 >= drandRoundTime(r.drand.round)) facts.push(["Note", "The Ethereum block came after the drand round; drand still guarantees unpredictability."]);
+  facts.push(["Seed", current.seed]);
+  kv($("resultFacts"), facts);
+  const body = $("orderBody"); body.replaceChildren();
+  rows.forEach((row, i) => {
+    const tr = document.createElement("tr");
+    const a = document.createElement("td"); a.className = "pos"; a.textContent = i + 1;
+    const b = document.createElement("td"); b.className = "name"; b.textContent = row.name;
+    const c = document.createElement("td"); c.className = "key"; c.textContent = row.key.slice(0, 12) + "…"; c.title = row.key;
+    tr.append(a, b, c); body.append(tr);
+  });
+  $("resultPanel").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+}
+
+const recordText = () => JSON.stringify(current, null, 2);
+$("copySeal").addEventListener("click", () => copyText(current.commitment, $("copyNote")));
+$("copySpec").addEventListener("click", () => copyText(JSON.stringify({ spec: current.spec, commitment: current.commitment, sealedAt: current.sealedAt }, null, 2), $("copyNote")));
+$("copyRecord").addEventListener("click", () => copyText(recordText(), $("copyNote")));
+$("dlRecord").addEventListener("click", () => download("draw-certificate-" + current.spec.id.replace(/[^\w.-]+/g, "_") + ".json", recordText()));
+$("newDraw").addEventListener("click", () => {
+  current = null; store.clear(); clearInterval(ticker);
+  lockForm(false); $("sealPanel").hidden = true; $("resultPanel").hidden = true; $("cdWrap").hidden = true;
+  setStep("tl-prep", "active"); for (const id of ["tl-seal", "tl-drand", "tl-eth", "tl-result"]) setStep(id, "idle");
+  showErr($("runErr"), "");
+});
+
+// Resume a draw sealed earlier in this browser.
+(async () => {
+  const saved = store.get();
+  if (!saved || !saved.spec || !saved.spec.sources || !(saved.spec.sources.eth || saved.spec.sources.drand) || saved.spec.sources["ran" + "dao"]) { store.clear(); return; }
+  current = saved;
+  $("title").value = saved.spec.title; $("drawId").value = saved.spec.id;
+  $("cands").value = saved.spec.candidates.join("\n"); $("contrib").value = saved.spec.contribution || "";
+  const mode = saved.spec.sources.drand && saved.spec.sources.eth ? "both" : saved.spec.sources.drand ? "drand" : "eth";
+  document.querySelector('input[name="src"][value="' + mode + '"]').checked = true;
+  refreshCount(); lockForm(true); showSeal();
+  if (saved.seed && saved.order) { await finish(); return; }
+  await waitAndDraw();
+})();
+
+// ---------------------------------------------------------------- verify
+$("recFile").addEventListener("change", async e => {
+  const f = e.target.files[0]; if (f) $("recIn").value = await f.text();
+});
+
+function addCheck(list, kind, text, detail) {
+  const li = document.createElement("li"); li.className = kind;
+  const ic = document.createElement("span"); ic.className = "ic"; ic.textContent = kind === "pass" ? "✓" : kind === "fail" ? "✗" : "i";
+  const body = document.createElement("div"); body.textContent = text;
+  if (detail) { const s = document.createElement("small"); s.textContent = detail; body.append(s); }
+  li.append(ic, body); list.append(li);
+  return kind !== "fail";
+}
+
+$("verifyBtn").addEventListener("click", async () => {
+  const list = $("checks"); list.replaceChildren();
+  let rec;
+  try { rec = JSON.parse($("recIn").value); } catch { addCheck(list, "fail", "This is not valid JSON. Paste the full draw certificate."); return; }
+  if (!rec || !rec.spec || !rec.commitment) { addCheck(list, "fail", "The certificate has no spec or commitment."); return; }
+  $("verifyBtn").disabled = true;
+  let ok = true;
+  try {
+    const spec = rec.spec;
+    if (spec.v !== VERSION) ok = addCheck(list, "fail", "Unknown protocol version: " + spec.v) && ok;
+
+    const { names, dups } = parseNames((spec.candidates || []).join("\n"));
+    const canonicalNames = names.length === spec.candidates.length && names.every((n, i) => n === spec.candidates[i]);
+    ok = addCheck(list, canonicalNames && !dups.length ? "pass" : "fail", "Participant list is well formed", spec.candidates.length + " unique, normalized names") && ok;
+
+    const C = await commitmentOf(spec);
+    ok = addCheck(list, C === rec.commitment ? "pass" : "fail", C === rec.commitment ? "Commitment matches the sealed record" : "Commitment does not match the sealed record", C) && ok;
+
+    const s = spec.sources || {}, r = rec.randomness || {};
+    let drandHex = null, ethHex = null;
+    if (s.drand) {
+      try {
+        const d = await fetchDrandRound(s.drand.round);
+        drandHex = d.randomness;
+        const same = !r.drand || normHex(r.drand.randomness) === d.randomness;
+        ok = addCheck(list, same ? "pass" : "fail", "drand round #" + s.drand.round + " fetched, signature verified" + (same ? "" : ", but the certificate claims a different value"), d.randomness) && ok;
+      } catch (e) { ok = addCheck(list, "fail", "drand round #" + s.drand.round + " could not be verified", e.message) && ok; }
+      if (s.drand.chainHash !== QUICKNET.hash) ok = addCheck(list, "fail", "The certificate names a different drand chain") && ok;
+    }
+    if (s.eth) {
+      try {
+        if (!r.eth || !Number.isInteger(r.eth.number)) throw new Error("the certificate names no block");
+        const head = await ethHead();
+        const b = await ethBlock(r.eth.number), p = await ethBlock(r.eth.number - 1);
+        if (!b || !p) throw new Error("block not found");
+        const isFirst = b.timestamp > s.eth.notBefore && p.timestamp <= s.eth.notBefore;
+        ok = addCheck(list, isFirst ? "pass" : "fail", isFirst ? "Block #" + b.number + " is the first block after the seal" : "Block #" + b.number + " is not the first block after the seal",
+          "notBefore " + fmtTime(s.eth.notBefore * 1000) + " · block " + fmtTime(b.timestamp * 1000) + " · previous " + fmtTime(p.timestamp * 1000)) && ok;
+        const same = normHex(r.eth.hash) === b.hash;
+        ok = addCheck(list, same ? "pass" : "fail", same ? "Block hash matches the canonical chain" : "Block hash differs from the canonical chain (reorg or forged value)", b.hash + " · " + (head - b.number) + " confirmations now") && ok;
+        ethHex = b.hash;
+        if (s.drand && b.timestamp * 1000 >= drandRoundTime(s.drand.round)) addCheck(list, "info", "The block came after the drand round", "drand still guarantees unpredictability.");
+      } catch (e) { ok = addCheck(list, "fail", "The Ethereum block could not be checked", e.message) && ok; }
+    }
+    if (!s.drand && !s.eth) ok = addCheck(list, "fail", "The certificate has no randomness source") && ok;
+
+    if ((!s.drand || drandHex) && (!s.eth || ethHex)) {
+      const seed = await computeSeed(C, ethHex, drandHex);
+      const rows = await computeOrder(seed, spec.candidates);
+      const order = rows.map(x => x.name);
+      const same = Array.isArray(rec.order) && order.length === rec.order.length && order.every((n, i) => n === rec.order[i]);
+      ok = addCheck(list, same ? "pass" : "fail", same ? "Order recomputed, identical to the certificate" : "Recomputed order differs from the certificate", order.slice(0, 3).map((n, i) => (i + 1) + ". " + n).join(" · ") + (order.length > 3 ? " …" : "")) && ok;
+    }
+    const deadline = [s.eth ? "before " + fmtTime((s.eth.notBefore + 1) * 1000) + " (after that the next Ethereum slot could start)" : "", s.drand ? "before " + fmtTime(drandRoundTime(s.drand.round)) + " (drand round)" : ""].filter(Boolean).join(" and ");
+    addCheck(list, "info", "Check the timing yourself", "The commitment must have been shared " + deadline + ". The certificate says it was sealed at " + (rec.sealedAt || "?") + ".");
+    const banner = document.createElement("li"); banner.className = ok ? "pass" : "fail";
+    banner.innerHTML = '<span class="ic"></span><div></div>';
+    banner.querySelector(".ic").textContent = ok ? "✓" : "✗";
+    banner.querySelector("div").textContent = ok ? "This draw checks out." : "This draw does not check out. See the failed items.";
+    banner.querySelector("div").style.fontWeight = "600";
+    list.prepend(banner);
+  } finally { $("verifyBtn").disabled = false; }
+});
+</script>
+</body>
+</html>
