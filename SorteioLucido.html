@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SorteioLúcido</title>
+<!-- Cliente drand fixado por versão E por hash de conteúdo: o navegador recusa uma cópia alterada. -->
+<script type="importmap">
+{
+  "imports": { "drand-client": "https://cdn.jsdelivr.net/npm/drand-client@1.4.2/build/esm/index.mjs" },
+  "integrity": { "https://cdn.jsdelivr.net/npm/drand-client@1.4.2/build/esm/index.mjs": "sha384-NA5O1QMT0tvgBTDU3OWQdlH5HIDoRWPAvKkyh2FmyzQc/hofoTURtZ8qA7B+d4bi" }
+}
+</script>
+<style>
+:root {
+  --bg: #eef2f3; --surface: #ffffff; --sunk: #e3e9eb; --ink: #13232b; --muted: #50646d; --line: #cdd8dc;
+  --accent: #a85d08; --accent-ink: #ffffff; --accent-soft: #fbeedd;
+  --ok: #1d7a4e; --ok-soft: #dff2e8; --warn: #8a5100; --warn-soft: #fdf0d6; --bad: #b3261e; --bad-soft: #fbe3e1;
+  --display: "Avenir Next", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1417; --surface: #141f24; --sunk: #0f181c; --ink: #e2ebee; --muted: #98abb2;
+    --line: #26363d; --accent: #f0a443; --accent-ink: #1a1206; --accent-soft: #2e2416;
+    --ok: #5cc995; --ok-soft: #12291f; --warn: #f0b85a; --warn-soft: #2c2312; --bad: #f08a80; --bad-soft: #2e1715;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1417; --surface: #141f24; --sunk: #0f181c; --ink: #e2ebee; --muted: #98abb2;
+  --line: #26363d; --accent: #f0a443; --accent-ink: #1a1206; --accent-soft: #2e2416;
+  --ok: #5cc995; --ok-soft: #12291f; --warn: #f0b85a; --warn-soft: #2c2312; --bad: #f08a80; --bad-soft: #2e1715;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+}
+[hidden] { display: none !important; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; min-width: 0; }
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+.brand { display: grid; gap: 2px; min-width: 0; }
+.brand h1 { font: 800 clamp(28px, 5vw, 42px)/1.05 var(--display); letter-spacing: -0.02em; margin: 0; }
+.brand h1 span { color: var(--accent); }
+.brand p { margin: 0; color: var(--muted); max-width: 62ch; }
+.family { font: 500 12px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.toprow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.tabs, .seg { display: inline-flex; background: var(--sunk); border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 4px; }
+.tabs button, .seg label { border: 0; background: transparent; color: var(--muted); font: 600 14px var(--body); padding: 8px 16px; border-radius: 999px; cursor: pointer; }
+.tabs button[aria-selected="true"], .seg label:has(input:checked) { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.seg label:has(input:disabled) { cursor: default; opacity: .7; }
+button.theme { font: 600 13px var(--body); border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 8px 12px; cursor: pointer; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.col { display: grid; gap: 20px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.step-head { display: flex; align-items: baseline; gap: 12px; }
+.step-no { font: 600 13px var(--mono); color: var(--accent); border: 1.5px solid var(--accent); border-radius: 999px; min-width: 28px; height: 28px; display: inline-grid; place-items: center; flex: none; }
+h2 { font: 650 20px/1.2 var(--display); margin: 0; text-wrap: balance; }
+h3 { font: 600 15px/1.3 var(--body); margin: 0; }
+.hint { color: var(--muted); font-size: 13.5px; margin: 0; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+label.f, .f { display: grid; gap: 6px; font-weight: 600; font-size: 13px; min-width: 0; }
+label.f small, .f small { font-weight: 400; color: var(--muted); }
+input[type=text], input[type=number], input[type=date], input[type=time], input[type=url], textarea, select {
+  width: 100%; font: 14px/1.5 var(--body); color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; min-width: 0;
+}
+textarea { font-family: var(--mono); font-size: 13.5px; min-height: 170px; resize: vertical; }
+textarea.short { min-height: 76px; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+input:disabled, textarea:disabled, select:disabled { opacity: .7; }
+.sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.src { position: relative; border: 1px solid var(--line); border-radius: 11px; padding: 11px; display: grid; gap: 3px; cursor: pointer; background: var(--bg); align-content: start; }
+.src input { position: absolute; opacity: 0; pointer-events: none; }
+.src b { font-size: 14px; }
+.src span { color: var(--muted); font-size: 12.5px; }
+.src:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.src:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.src:has(input:disabled) { cursor: default; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button.btn, label.btn { font: 600 14px var(--body); border-radius: 10px; padding: 9px 15px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button.btn:disabled { opacity: .45; cursor: not-allowed; }
+button.btn.quiet { background: transparent; }
+label.btn:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.counter { font: 500 12.5px var(--mono); color: var(--muted); }
+.msg { border-radius: 10px; padding: 10px 12px; font-size: 13.5px; overflow-wrap: anywhere; }
+.msg.bad { background: var(--bad-soft); color: var(--bad); }
+.msg.warn { background: var(--warn-soft); color: var(--warn); }
+.msg.ok { background: var(--ok-soft); color: var(--ok); }
+.seal { border: 1.5px dashed var(--accent); border-radius: 12px; padding: 14px; display: grid; gap: 8px; background: var(--accent-soft); }
+.seal .k { font: 500 11.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.hash { font: 500 13.5px/1.5 var(--mono); word-break: break-all; }
+.hash.big { font-size: clamp(15px, 3.4vw, 20px); font-weight: 600; }
+dl.kv { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 13.5px; }
+dl.kv dt { color: var(--muted); max-width: 16ch; }
+dl.kv dd { margin: 0; min-width: 0; font-family: var(--mono); font-size: 13px; word-break: break-all; }
+dl.kv a, .checks a, .prose a { color: var(--accent); }
+.rail { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); }
+@media (max-width: 860px) { .rail { position: static; } }
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.timeline li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; }
+.dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); margin-top: 4px; }
+.timeline li[data-s="active"] .dot { border-color: var(--accent); background: var(--accent-soft); animation: pulse 1.6s ease-in-out infinite; }
+.timeline li[data-s="done"] .dot { border-color: var(--ok); background: var(--ok); }
+.timeline li[data-s="warn"] .dot { border-color: var(--warn); background: var(--warn-soft); }
+.timeline li[data-s="error"] .dot { border-color: var(--bad); background: var(--bad); }
+.timeline .t { font-weight: 600; font-size: 14px; }
+.timeline .d { color: var(--muted); font-size: 12.5px; font-family: var(--mono); word-break: break-all; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 5px var(--accent-soft); } }
+@media (prefers-reduced-motion: reduce) { .timeline li[data-s="active"] .dot { animation: none; } * { scroll-behavior: auto !important; } }
+.countdown { font: 800 32px/1.1 var(--display); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.result { overflow-x: auto; }
+table.order { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.order th { text-align: left; font: 500 11.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); }
+table.order td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.order td.pos { font: 800 18px var(--display); color: var(--accent); width: 48px; font-variant-numeric: tabular-nums; }
+table.order td.key { font: 12.5px var(--mono); color: var(--muted); white-space: nowrap; }
+table.order td.name { font-weight: 500; overflow-wrap: anywhere; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checks li { display: grid; grid-template-columns: minmax(0, 7.5em) minmax(0, 1fr); gap: 10px; font-size: 14px; align-items: start; }
+.checks .ic { font: 600 11.5px/22px var(--mono); border-radius: 6px; text-align: center; min-height: 22px; padding: 0 4px; }
+.checks .passou .ic { background: var(--ok-soft); color: var(--ok); }
+.checks .falhou .ic { background: var(--bad-soft); color: var(--bad); }
+.checks .nao_verificado .ic, .checks .atencao .ic { background: var(--warn-soft); color: var(--warn); }
+.checks small { display: block; color: var(--muted); font-family: var(--mono); font-size: 12px; word-break: break-all; }
+.verdict { font-weight: 700; font-size: 16px; }
+.drawid { font: 700 clamp(18px, 4vw, 24px)/1.2 var(--mono); overflow-wrap: anywhere; }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; font-weight: 600; }
+details > .inner { display: grid; gap: 12px; margin-top: 10px; }
+pre.code, pre.ata { background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; font: 12.5px/1.55 var(--mono); margin: 0; }
+pre.ata { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 420px; overflow-y: auto; }
+.prose { max-width: 68ch; display: grid; gap: 10px; font-size: 14px; }
+.prose p { margin: 0; }
+code { font-family: var(--mono); font-size: .92em; }
+.tag { font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; background: var(--warn-soft); color: var(--warn); border-radius: 999px; padding: 2px 8px; }
+.saved { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13.5px; }
+.saved li { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.check-inline { display: flex; gap: 8px; align-items: start; font-size: 13.5px; }
+.check-inline input { margin-top: 3px; }
+footer { color: var(--muted); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="family" data-s="family"></div>
+      <h1>Sorteio<span>Lúcido</span></h1>
+      <p data-s="tagline"></p>
+    </div>
+    <div class="toprow">
+      <div class="tabs" role="tablist" data-s-aria="tabsAria">
+        <button role="tab" id="tab-run" aria-selected="true" aria-controls="view-run" data-s="tabRun"></button>
+        <button role="tab" id="tab-verify" aria-selected="false" aria-controls="view-verify" tabindex="-1" data-s="tabVerify"></button>
+      </div>
+      <button class="theme" id="themeBtn" type="button"></button>
+    </div>
+  </header>
+
+  <!-- ===================== SORTEAR ===================== -->
+  <section id="view-run" role="tabpanel" aria-labelledby="tab-run">
+    <div class="grid">
+      <div class="col">
+
+        <div class="panel" id="prep">
+          <div class="step-head"><span class="step-no">1</span><h2 data-s="step1"></h2></div>
+          <div class="seg" role="radiogroup" data-s-aria="modeAria">
+            <label><input type="radio" name="mode" value="live" checked><span data-s="modeLive"></span></label>
+            <label><input type="radio" name="mode" value="scheduled"><span data-s="modeScheduled"></span></label>
+          </div>
+          <div class="fields">
+            <label class="f" for="title"><span data-s="fTitle"></span>
+              <input type="text" id="title" autocomplete="off">
+            </label>
+            <label class="f" for="drawId"><span><span data-s="fDrawId"></span> <small data-s="fDrawIdHint"></small></span>
+              <input type="text" id="drawId" autocomplete="off" spellcheck="false">
+            </label>
+          </div>
+          <label class="f" for="cands">
+            <span class="row" style="justify-content:space-between">
+              <span data-s="fCands"></span>
+              <span class="counter" id="candCount" aria-live="polite"></span>
+            </span>
+            <textarea id="cands" spellcheck="false"></textarea>
+          </label>
+          <div class="msg bad" id="candErr" role="alert" hidden></div>
+
+          <div class="f">
+            <span data-s="fSource"></span>
+            <div class="sources" role="radiogroup" id="presetBox" data-s-aria="fSource"></div>
+          </div>
+
+          <div class="fields" id="lotteryBox" hidden>
+            <label class="f" for="contest"><span><span data-s="fContest"></span> <small id="contestHint"></small></span>
+              <input type="number" id="contest" min="1" step="1" inputmode="numeric">
+            </label>
+            <label class="f" for="drawDate"><span><span data-s="fDrawDate"></span> <small id="drawTimeHint"></small></span>
+              <input type="date" id="drawDate">
+            </label>
+          </div>
+          <p class="hint" id="lotteryNote" hidden></p>
+
+          <label class="f" for="contrib"><span><span data-s="fContrib"></span> <small data-s="fContribHint"></small></span>
+            <input type="text" id="contrib" autocomplete="off" data-s-ph="fContribPh">
+          </label>
+
+          <details id="techPrep">
+            <summary data-s="techDetails"></summary>
+            <div class="inner">
+              <label class="f" for="rpcs"><span><span data-s="fRpcs"></span> <small data-s="fRpcsHint"></small></span>
+                <textarea id="rpcs" class="short" spellcheck="false"></textarea>
+              </label>
+              <label class="f" for="relay"><span><span data-s="fRelay"></span> <small data-s="fRelayHint"></small></span>
+                <input type="url" id="relay" spellcheck="false" placeholder="https://relay.exemplo.org">
+              </label>
+              <div class="f">
+                <span><span data-s="fCalendar"></span> <small data-s="fCalendarHint"></small></span>
+                <div class="fields" id="calendarBox"></div>
+              </div>
+              <p class="hint" id="drandInfo"></p>
+            </div>
+          </details>
+
+          <div class="msg bad" id="sealErr" role="alert" hidden></div>
+          <div class="row">
+            <button class="btn primary" id="sealBtn" type="button" data-s="sealBtn"></button>
+            <button class="btn" id="otherIdBtn" type="button" data-s="otherIdBtn" hidden></button>
+            <span class="hint" data-s="sealLockHint"></span>
+          </div>
+        </div>
+
+        <div class="panel" id="sealPanel" hidden>
+          <div class="step-head"><span class="step-no">2</span><h2 data-s="step2"></h2></div>
+          <p class="hint" data-s="shareHint"></p>
+          <div class="seal">
+            <span class="k" data-s="commitLabel"></span>
+            <div class="hash big" id="commitHash"></div>
+          </div>
+          <div class="row">
+            <button class="btn primary" id="copySeal" type="button" data-s="copySeal"></button>
+            <button class="btn" id="copySpec" type="button" data-s="copySpec"></button>
+            <span class="hint" id="copyNote" role="status"></span>
+          </div>
+          <textarea id="copyFallback" class="short" hidden readonly></textarea>
+          <div class="msg" id="anchorMsg" role="status" hidden></div>
+          <dl class="kv" id="sealFacts"></dl>
+          <details>
+            <summary data-s="techDetails"></summary>
+            <div class="inner">
+              <dl class="kv" id="sealTech"></dl>
+              <pre class="code" id="specJson"></pre>
+              <div class="row"><button class="btn" id="otsUpgrade" type="button" data-s="otsUpgrade" hidden></button></div>
+            </div>
+          </details>
+        </div>
+
+        <div class="panel" id="resultPanel" hidden>
+          <div class="step-head"><span class="step-no">3</span><h2 id="resultTitle"></h2></div>
+          <div id="pendingBox" hidden>
+            <p class="hint" id="pendingText"></p>
+            <div class="row" style="margin-top:10px"><button class="btn" id="fetchNow" type="button" data-s="fetchNow"></button></div>
+          </div>
+          <div id="manualBox" hidden class="panel" style="background:var(--bg)">
+            <h3 id="manualTitle"></h3>
+            <p class="hint" id="manualHint"></p>
+            <a id="manualLink" target="_blank" rel="noopener noreferrer"></a>
+            <div class="fields">
+              <label class="f" for="manualNums"><span id="manualNumsLabel"></span>
+                <input type="text" id="manualNums" inputmode="numeric" autocomplete="off" spellcheck="false">
+              </label>
+              <label class="f" for="manualDate"><span data-s="manualDate"></span>
+                <input type="date" id="manualDate">
+              </label>
+            </div>
+            <label class="check-inline"><input type="checkbox" id="manualConfirm"><span data-s="manualConfirm"></span></label>
+            <div class="msg bad" id="manualErr" role="alert" hidden></div>
+            <div class="row"><button class="btn primary" id="manualSave" type="button" data-s="manualSave"></button></div>
+          </div>
+          <div id="doneBox" hidden class="col" style="gap:14px">
+            <div class="result">
+              <table class="order">
+                <thead><tr><th data-s="thPos"></th><th data-s="thName"></th><th data-s="thKey"></th></tr></thead>
+                <tbody id="orderBody"></tbody>
+              </table>
+            </div>
+            <dl class="kv" id="resultFacts"></dl>
+            <div class="row">
+              <button class="btn primary" id="dlCert" type="button" data-s="dlCert"></button>
+              <button class="btn" id="copyCert" type="button" data-s="copyCert"></button>
+              <button class="btn" id="copyAta" type="button" data-s="copyAta"></button>
+              <span class="hint" id="copyNote2" role="status"></span>
+            </div>
+            <details>
+              <summary data-s="ataTitle"></summary>
+              <div class="inner"><pre class="ata" id="ataText"></pre></div>
+            </details>
+          </div>
+          <div class="row"><button class="btn quiet" id="newDraw" type="button" data-s="newDraw"></button></div>
+        </div>
+      </div>
+
+      <aside class="panel rail" aria-live="polite">
+        <h3 data-s="statusTitle"></h3>
+        <div id="cdWrap" hidden><div class="hint" id="cdLabel" data-s="cdLabel"></div><div class="countdown" id="countdown">--</div></div>
+        <ol class="timeline" id="timeline"></ol>
+        <div class="msg bad" id="runErr" role="alert" hidden></div>
+        <div id="savedWrap" hidden>
+          <h3 data-s="savedTitle"></h3>
+          <ul class="saved" id="savedList"></ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===================== CONFERIR ===================== -->
+  <section id="view-verify" role="tabpanel" aria-labelledby="tab-verify" hidden>
+    <div class="grid">
+      <div class="panel">
+        <div class="step-head"><h2 data-s="verifyTitle"></h2></div>
+        <p class="hint" data-s="verifyIntro"></p>
+        <label class="f" for="certIn"><span data-s="certIn"></span>
+          <textarea id="certIn" spellcheck="false" placeholder='{"spec": {...}, "commitment": "...", ...}'></textarea>
+        </label>
+        <label class="check-inline"><input type="checkbox" id="lotteryEye"><span data-s="lotteryEye"></span></label>
+        <div class="row">
+          <button class="btn primary" id="verifyBtn" type="button" data-s="verifyBtn"></button>
+          <label class="btn"><span data-s="loadFile"></span><input type="file" id="certFile" accept=".json,application/json" style="position:absolute;opacity:0;width:1px;height:1px"></label>
+        </div>
+        <div id="verifyHead" hidden class="panel" style="background:var(--bg)">
+          <div class="hint" data-s="drawIdLabel"></div>
+          <div class="drawid" id="vDrawId"></div>
+          <p class="hint" data-s="sameIdReminder"></p>
+        </div>
+        <div class="msg" id="verdict" role="status" hidden></div>
+        <ul class="checks" id="checks"></ul>
+        <ol id="vOrderWrap" hidden></ol>
+        <details>
+          <summary data-s="ruleTitle"></summary>
+          <div class="inner prose">
+            <p data-s="ruleText1"></p>
+            <p data-s="ruleText2"></p>
+            <pre class="code" id="ruleCode"></pre>
+          </div>
+        </details>
+      </div>
+      <aside class="panel rail">
+        <h3 data-s="passMeansTitle"></h3>
+        <div class="prose" style="font-size:13.5px">
+          <p data-s="passMeans1"></p>
+          <p data-s="passMeans2"></p>
+          <p data-s="passMeans3"></p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <footer data-s="footer"></footer>
+</div>
+
+<script type="module">
+// ---------------------------------------------------------------- CORE-BEGIN
+// Funções puras: todo o protocolo LucentDraw/2 (e a leitura do /1), sem acesso ao DOM.
+// Os testes extraem este bloco e o executam no Node (tests/core_loader.mjs).
+
+// ---- Tabela de textos (pt-BR). Para outra língua, troque só esta tabela.
+const STR = {
+  family: "LucentCrypto · sorteios verificáveis",
+  tagline: "Um sorteio que qualquer pessoa pode conferir. Primeiro a lista é lacrada; depois chega um valor aleatório público que ninguém controla; a ordem sai de uma regra publicada.",
+  tabsAria: "Seções", tabRun: "Sortear", tabVerify: "Conferir",
+  themeAuto: "Tema: automático", themeLight: "Tema: claro", themeDark: "Tema: escuro",
+  step1: "Preparar", step2: "Lacrar: divulgue o lacre agora", step3: "Resultado",
+  modeAria: "Tipo de sorteio", modeLive: "Ao vivo", modeScheduled: "Agendado",
+  fTitle: "Título", fDrawId: "ID do sorteio", fDrawIdHint: "único; anuncie com antecedência",
+  fCands: "Participantes, um por linha",
+  fSource: "Fonte de aleatoriedade",
+  fContest: "Concurso", fDrawDate: "Data prevista do sorteio",
+  fContrib: "Contribuição dos presentes", fContribHint: "opcional: dados, uma frase; entra no registro lacrado",
+  fContribPh: "ex.: 4 6 1 3 5 2",
+  techDetails: "Detalhes técnicos",
+  fRpcs: "Servidores Ethereum (JSON-RPC), um por linha", fRpcsHint: "tentados em ordem; sem chave de API",
+  fRelay: "Relay de carimbo de tempo", fRelayHint: "opcional; sem ele não há carimbo de tempo",
+  fCalendar: "Calendário de sorteios da Caixa", fCalendarHint: "dias da semana (0 = domingo) e hora de Brasília; confira no site da Caixa",
+  calDays: "Dias", calTime: "Hora", calRefContest: "Concurso de referência", calRefDate: "Data dele",
+  drandInfo: (h) => "Farol drand quicknet, cadeia " + h + ", verificado por assinatura BLS com a chave pública fixada nesta página.",
+  sealBtn: "Lacrar o sorteio", sealing: "Lacrando…", sealLockHint: "Depois de lacrar, a lista e as opções ficam travadas.",
+  otherIdBtn: "Novo sorteio com outro ID",
+  presets: {
+    eth: ["Bloco público Ethereum", "Hash do primeiro bloco após o lacre, com 1 confirmação. Cerca de 15–30 s."],
+    drand: ["Farol drand", "Valor aleatório com assinatura BLS verificada aqui. Cerca de 6–9 s."],
+    "eth+drand": ["Bloco Ethereum + farol drand", "Primeiro o bloco, depois uma rodada drand. Nenhuma fonte sozinha decide. Cerca de 40 s."],
+    federal: ["Loteria Federal", "Os 5 bilhetes premiados do concurso escolhido. Resultado após o concurso."],
+    megasena: ["Mega-Sena", "As 6 dezenas do concurso escolhido. Resultado após o concurso."],
+    "federal+drand": ["Loteria Federal + farol drand", "O concurso e uma rodada drand cerca de 2 h depois dele."],
+    "megasena+drand": ["Mega-Sena + farol drand", "O concurso e uma rodada drand cerca de 2 h depois dele."],
+  },
+  candCount: (n) => n + (n === 1 ? " participante" : " participantes"),
+  dupNames: (list) => "Cada nome precisa ser único. Repetidos: " + list,
+  errNoId: "Dê um ID ao sorteio antes de lacrar. Anuncie o ID com antecedência, para que ninguém possa repetir o mesmo sorteio.",
+  errFewNames: "Inclua pelo menos dois participantes.",
+  errDups: "Há nomes repetidos. Corrija a lista antes de lacrar.",
+  errIdUsed: (id) => "O ID \"" + id + "\" já foi lacrado neste navegador. Um segundo lacre com o mesmo ID invalidaria o sorteio. Use \"Novo sorteio com outro ID\".",
+  errContest: "Informe o número do concurso (inteiro, maior que zero).",
+  errDrawDate: "Informe a data prevista do sorteio do concurso.",
+  errDrawTooSoon: "O sorteio do concurso precisa ser pelo menos 2 horas depois do lacre. Escolha um concurso posterior.",
+  errEthNone: "Nenhum servidor Ethereum respondeu. Confira a conexão ou edite a lista em Detalhes técnicos.",
+  errSealFailed: (m) => m + " Nada foi lacrado; confira a conexão e tente de novo.",
+  errStorage: "Atenção: este navegador não permite guardar dados; se a página for recarregada, o lacre em andamento se perde. Guarde o lacre copiado.",
+  shareHint: "Publique este lacre onde as pessoas verão antes de a aleatoriedade surgir: grupo de mensagens, telão da reunião, ata. Um lacre mostrado só depois do resultado não prova nada.",
+  commitLabel: "Lacre · SHA-256 do registro lacrado",
+  copySeal: "Copiar lacre", copySpec: "Copiar registro lacrado (JSON)",
+  copied: "Copiado", copyManual: "Selecione e copie o texto abaixo",
+  noRelay: "Sem carimbo de tempo: compartilhe o lacre agora para ter prova de que ele veio antes do sorteio.",
+  anchoring: "Pedindo carimbos de tempo…",
+  anchored: (list) => "Carimbo de tempo obtido: " + list + ".",
+  anchorPartial: (m) => "Alguns carimbos falharam: " + m,
+  relayFailed: (m) => "O relay de carimbo de tempo não respondeu (" + m + "). Sem carimbo de tempo: compartilhe o lacre agora para ter prova de que ele veio antes do sorteio.",
+  otsName: "registro público de longo prazo",
+  otsPending: "registro público de longo prazo: pendente (completa em algumas horas)",
+  otsComplete: "registro público de longo prazo: completo",
+  otsUpgrade: "Atualizar registro público de longo prazo",
+  factId: "ID do sorteio", factCount: "Participantes", factSealed: "Lacrado em", factMode: "Tipo",
+  factEth: "Bloco público Ethereum", factDrand: "Farol drand", factMegasena: "Mega-Sena", factFederal: "Loteria Federal",
+  factEthPlan: (t, c) => "primeiro bloco após " + t + ", com " + c + " confirmação",
+  factDrandPlan: (r, t) => "rodada " + r + " · prevista para " + t,
+  factLotteryPlan: (c, d) => "concurso " + c + " · sorteio previsto para " + d,
+  factCommit: "Lacre", factSeed: "Semente", factAnchors: "Carimbos de tempo", factRelay: "Relay", factRpcs: "Servidores Ethereum",
+  statusTitle: "Andamento", cdLabel: "Aleatoriedade esperada em", cdSoon: "a qualquer momento",
+  tlPrep: "Preparar", tlPrepD: "Lista e fonte", tlSeal: "Lacrar", tlSealD: "Registro travado e resumido",
+  tlAnchor: "Carimbo de tempo", tlAnchorIdle: "Depois do lacre",
+  tlEth: "Bloco público Ethereum", tlDrand: "Farol drand", tlMegasena: "Mega-Sena", tlFederal: "Loteria Federal",
+  tlResult: "Ordem calculada", tlResultD: "A partir do lacre e da aleatoriedade",
+  tlNotUsed: "Não usado neste sorteio",
+  tlWaitingSlot: (h) => "Bloco mais recente #" + h + "; aguardando o próximo",
+  tlConfirming: (n, c) => "Bloco #" + n + " produzido; aguardando " + c + " confirmação",
+  tlEthDone: (n, h) => "#" + n + " · " + h + "…",
+  tlDrandWait: (r) => "Aguardando a rodada " + r,
+  tlDrandDone: (r, v) => "Rodada " + r + " · " + v + "… · assinatura verificada",
+  tlLotteryWait: (c, d) => "Aguardando o concurso " + c + " (" + d + ")",
+  tlLotteryDone: (c, v) => "Concurso " + c + " · " + v,
+  tlRetrying: "Sem resposta; tentando de novo",
+  savedTitle: "Lacres guardados neste navegador", reopen: "Reabrir",
+  savedPending: "aguardando", savedDone: "concluído",
+  resultTitle: (t) => t ? "Resultado · " + t : "Resultado",
+  pendingTitle: "Aguardando a aleatoriedade",
+  pendingLottery: (label, c, d) => label + ", concurso " + c + ": resultado ainda não disponível (sorteio previsto para " + d + "). Você pode fechar esta página; ao reabrir, o resultado será buscado.",
+  fetchNow: "Buscar resultado agora",
+  lotteryUnavailable: "Não foi possível obter o resultado automaticamente (o site da Caixa pode recusar pedidos desta página). Digite o resultado oficial abaixo.",
+  manualTitle: (label, c) => "Inserir o resultado manualmente · " + label + ", concurso " + c,
+  manualHint: "Copie os números exatamente como publicados na página oficial. O certificado e a ata registram que a entrada foi manual.",
+  manualNumsMega: "As 6 dezenas sorteadas, separadas por espaço", manualNumsFederal: "Os 5 bilhetes premiados, do 1º ao 5º prêmio, separados por espaço",
+  manualDate: "Data do sorteio",
+  manualConfirm: "Conferi estes números na página oficial da Caixa.",
+  manualSave: "Usar este resultado",
+  manualBadMega: "Digite 6 dezenas diferentes, de 1 a 60.",
+  manualBadFederal: "Digite 5 bilhetes de até 5 algarismos, na ordem dos prêmios.",
+  manualBadDate: "Informe a data do sorteio.",
+  manualNoConfirm: "Marque a confirmação de que os números foram conferidos na página oficial.",
+  officialPage: "Página oficial de resultados",
+  thPos: "Pos.", thName: "Participante", thKey: "Chave",
+  dlCert: "Baixar certificado", copyCert: "Copiar certificado", copyAta: "Copiar ata",
+  ataTitle: "Ata do sorteio",
+  newDraw: "Começar um novo sorteio",
+  errWait: (m) => m + " O lacre continua válido: recarregue a página para continuar aguardando os mesmos alvos.",
+  errDrandFetch: (r, m) => "A rodada drand " + r + " não pôde ser obtida (" + m + ").",
+  errDrandMismatch: "A aleatoriedade drand não corresponde à assinatura.",
+  errDrandRound: (got, r) => "O drand devolveu a rodada " + got + " em vez de " + r + ".",
+  errEthWait: (c) => "Não foi possível ler um bloco Ethereum posterior ao lacre com " + c + " confirmação.",
+  verifyTitle: "Conferir um certificado de sorteio",
+  verifyIntro: "Cole ou carregue um certificado. Esta página recalcula o lacre, busca de novo os valores nas fontes públicas, verifica a assinatura do drand e refaz a ordem.",
+  certIn: "Certificado do sorteio (JSON)", loadFile: "Carregar arquivo…",
+  lotteryEye: "Conferi a olho os números da loteria na página oficial da Caixa (permite concluir mesmo sem a consulta automática).",
+  verifyBtn: "Conferir", verifying: "Conferindo…",
+  drawIdLabel: "ID do sorteio",
+  sameIdReminder: "Lembrete: um segundo lacre com o mesmo ID invalida o sorteio. Confira se este foi o único lacre anunciado para este ID.",
+  notJson: "Isto não é um JSON válido. Cole o certificado completo.",
+  statusLabel: { passou: "passou", falhou: "falhou", nao_verificado: "não verificado", atencao: "atenção" },
+  verdictOk: "Este sorteio confere.",
+  verdictBad: (list) => "Este sorteio não confere: " + list,
+  verdictIncomplete: (list) => "Conferência incompleta: nenhum item falhou, mas estes não puderam ser confirmados: " + list,
+  orderTitle: "Ordem recalculada",
+  ruleTitle: "A regra, para conferir sem esta página",
+  ruleText1: "Tudo é SHA-256 sobre texto UTF-8. C é o hash do registro lacrado em JSON canônico (chaves ordenadas, sem espaços). A semente resume a versão, C e o valor de cada fonte, uma por linha, na ordem eth, drand, megasena, federal, com \"-\" para fonte não usada. Cada participante recebe a chave H(\"LucentDraw/2\\nkey\\n\" + semente + \"\\n\" + nome) e a ordem é crescente pela chave.",
+  ruleText2: "O verificador de referência verify_draw.py faz a conferência completa, inclusive das assinaturas dos carimbos de tempo. O mesmo cálculo em poucas linhas de Python:",
+  passMeansTitle: "O que significa passar",
+  passMeans1: "A ordem decorre da lista lacrada e de valores aleatórios públicos que ninguém podia escolher depois de ver a lista.",
+  passMeans2: "O que o programa não prova sozinho: que o lacre foi divulgado antes da aleatoriedade. Os carimbos de tempo servem de prova; sem eles, confira onde e quando o lacre foi publicado.",
+  passMeans3: "O valor drand é conferido com a chave pública da quicknet. Para o bloco Ethereum, a página confere que ele é o primeiro após o lacre e que continua na cadeia canônica, usando os servidores listados; para independência total, use o seu próprio nó.",
+  footer: "SorteioLúcido · protocolo LucentDraw/2 · parte da família LucentCrypto. Funciona no seu navegador, sem chaves, sem cadastro e sem estatísticas de uso. A página só faz pedidos às fontes de aleatoriedade (servidores Ethereum listados, drand, Caixa), à biblioteca drand-client fixada por hash e ao relay, se você configurar um.",
+  // Conferência (SPEC 9)
+  ck: {
+    parseNoSpec: "O certificado não tem o objeto spec.",
+    parseVersion: (v) => "Versão de protocolo desconhecida: " + v + ".",
+    parseNoCommit: "O certificado não tem o compromisso (commitment).",
+    parseOk: (v) => "Certificado lido (protocolo " + v + ").",
+    specBad: "O registro lacrado não está bem formado.",
+    specOk: "Registro lacrado bem formado.",
+    specOkD: (n) => n + " participantes, nomes únicos e normalizados",
+    commitErr: "Não foi possível calcular o compromisso.",
+    commitOk: "O compromisso confere com o registro lacrado.",
+    commitBad: "O compromisso não confere com o registro lacrado.",
+    sealPending: (what) => "Lacre: " + what + " ainda não foi registrado.",
+    ethMissing: "O certificado não indica o bloco Ethereum usado.",
+    ethUnreach: (n) => "Bloco Ethereum #" + n + " não pôde ser consultado.",
+    ethNoBlock: (n) => "Bloco #" + n + " ou seu antecessor não existe na cadeia consultada.",
+    ethNotFirst: (n) => "O bloco #" + n + " não é o primeiro bloco após o lacre.",
+    ethReorg: (n) => "O hash do bloco #" + n + " difere da cadeia canônica (reorganização da cadeia ou valor adulterado). Pela regra, vale o bloco canônico.",
+    ethTimes: "Os horários do bloco no certificado não conferem com a cadeia.",
+    ethFewConf: (n, c) => "Bloco #" + n + " confere, mas ainda tem só " + c + " confirmações.",
+    ethOk: (n) => "Bloco #" + n + " é o primeiro após o lacre e está na cadeia canônica.",
+    drandMissing: (r) => "O certificado não traz a rodada drand #" + r + ".",
+    drandUnreach: (r) => "Rodada drand #" + r + " não pôde ser consultada.",
+    drandRound: (got, r) => "A fonte devolveu a rodada " + got + " em vez de " + r + ".",
+    drandSha: "A aleatoriedade drand não é o SHA-256 da assinatura.",
+    drandOtherValue: (r) => "Rodada drand #" + r + " verificada, mas o certificado traz outro valor.",
+    drandOk: (r) => "Rodada drand #" + r + ": assinatura BLS verificada, valor confere.",
+    lotMissing: (l, c) => l + ": o certificado não traz um resultado válido do concurso " + c + ".",
+    lotOk: (l, c, m) => l + ", concurso " + c + ": confere com o resultado oficial" + m + ".",
+    lotBad: (l, c, m) => l + ", concurso " + c + ": o certificado difere do resultado oficial" + m + ".",
+    lotUnverified: (l, c, m) => l + ", concurso " + c + ": não verificado automaticamente" + m + ". Compare os números com a página oficial.",
+    lotManual: " (resultado inserido manualmente)",
+    lotNoResult: "sem resultado publicado",
+    orderMissing: "Faltam valores de aleatoriedade para recalcular a ordem.",
+    orderMissingD: "um certificado sem aleatoriedade é apenas um lacre",
+    seedBad: "A semente recalculada difere da semente do certificado.",
+    orderBad: "A ordem recalculada difere da ordem do certificado.",
+    orderPartial: "Ordem consistente com os valores do certificado, mas nem todas as fontes foram consultadas.",
+    orderOk: "Ordem recalculada, idêntica à do certificado.",
+    anchorsBad: "Há carimbos de tempo que não conferem.",
+    anchorsOk: "Carimbos de tempo correspondem a este compromisso.",
+    anchorUnread: (t, m) => t + ": token ilegível (" + m + ")",
+    anchorOther: (t) => t + ": o token não carimba este compromisso",
+    anchorTime: (t, g) => t + ": o horário no certificado difere do token (" + g + ")",
+    anchorNoSig: "assinatura da TSA não validada nesta página; use verify_draw.py",
+    anchorUnknown: (t) => "tipo de âncora desconhecido: " + t,
+    anchorInvalid: "âncora inválida",
+    otsNote: (c) => "registro público de longo prazo (OpenTimestamps): " + (c ? "completo" : "pendente") + "; confira com `ots verify`",
+    timingNone: "Atenção: sem carimbo de tempo. Não é possível provar que o lacre veio antes do sorteio.",
+    timingNoneD: (t) => "o lacre precisa ter sido divulgado antes de " + t,
+    timingPartial: "Horário de alguma fonte desconhecido; comparação incompleta.",
+    timingUnknown: (l) => l + ": horário desconhecido",
+    timingOk: "O carimbo de tempo mais antigo é anterior à aleatoriedade.",
+    timingBad: "O carimbo de tempo mais antigo não é anterior à aleatoriedade.",
+    labels: { eth: "bloco Ethereum", drand: "rodada drand", megasena: "sorteio da Mega-Sena", federal: "sorteio da Loteria Federal" },
+    spec: {
+      notObject: "spec não é um objeto",
+      bool: (p) => p + ": valor booleano não é permitido",
+      float: (p) => p + ": número não inteiro não é permitido",
+      type: (p) => p + ": tipo não suportado",
+      missing: (l) => "campos ausentes: " + l,
+      extra: (l) => "campos desconhecidos: " + l,
+      mode: "mode deve ser \"live\" ou \"scheduled\"",
+      notNorm: (f) => f + " não está normalizado (NFC, sem espaços nas pontas)",
+      emptyId: "o ID do sorteio está vazio",
+      candsNotList: "candidates não é uma lista",
+      fewCands: "são necessários pelo menos 2 participantes",
+      candEmpty: (i) => "participante " + i + " vazio ou inválido",
+      candNotNorm: (i) => "participante " + i + " não está normalizado (NFC, sem espaços nas pontas)",
+      dups: (l) => "nomes repetidos: " + l,
+      noSources: "sources vazio ou inválido",
+      unknownSource: (k) => "fonte desconhecida: " + k,
+      srcNotObj: (k) => "sources." + k + " não é um objeto",
+      srcFields: (k, f) => "sources." + k + " deve ter exatamente os campos " + f,
+      ethChain: "sources.eth: chain/rule inesperados",
+      ethNums: "sources.eth: notBefore/confirmations inválidos",
+      drandChain: "sources.drand: a cadeia não é a quicknet",
+      drandRound: "sources.drand: rodada inválida",
+      contest: (g) => "sources." + g + ": concurso inválido",
+    },
+  },
+  // Ata do sorteio (SPEC 7.3)
+  ata: {
+    head: "ATA DO SORTEIO",
+    title: "Título", id: "ID do sorteio", sealed: "Lacrado em", sealedNote: "horário declarado pelo operador",
+    count: "Número de participantes", contrib: "Contribuição dos presentes", none: "(nenhuma)",
+    commit: "Lacre (compromisso SHA-256 do registro lacrado)",
+    sources: "Fontes de aleatoriedade e valores usados",
+    eth: (n, h, t) => "Bloco público Ethereum #" + n + " (horário do bloco " + t + "), hash " + h,
+    drand: (r, v) => "Farol drand quicknet, rodada " + r + ", valor " + v + " (assinatura BLS verificada no sorteio)",
+    megasena: (c, v, d) => "Mega-Sena, concurso " + c + " (" + d + "), dezenas " + v,
+    federal: (c, v, d) => "Loteria Federal, concurso " + c + " (" + d + "), bilhetes do 1º ao 5º prêmio " + v,
+    manual: "  ATENÇÃO: resultado inserido manualmente pelo operador; confira na página oficial.",
+    link: "  Conferência: ",
+    anchors: "Carimbos de tempo",
+    anchorLine: (tsa, t) => tsa + ": " + t + " (o token carimba este lacre; assinatura da TSA não validada pela página)",
+    noAnchors: "Sem carimbo de tempo. A prova de que o lacre veio antes do sorteio depende de onde e quando ele foi divulgado.",
+    seed: "Semente",
+    order: "Resultado (ordem sorteada)",
+    howTitle: "Como conferir",
+    how: (file) => "Qualquer pessoa pode conferir este sorteio sem confiar em quem o organizou. Abra o SorteioLúcido, vá à aba Conferir e carregue o certificado (" + file + "); ou rode \"python3 verify_draw.py " + file + "\". A conferência recalcula o lacre, busca de novo os valores nas fontes públicas e refaz a ordem pela regra publicada. Um segundo lacre com o mesmo ID invalida o sorteio.",
+  },
+};
+
+const VERSION = "LucentDraw/2";
+const V1 = "LucentDraw/1";
+const SOURCE_ORDER = ["eth", "drand", "megasena", "federal"];
+const STATUS = { PASS: "passou", FAIL: "falhou", UNVERIFIED: "nao_verificado", WARN: "atencao" };
+
+const QUICKNET = {
+  hash: "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+  genesis: 1692803367, period: 3,
+  endpoints: ["https://api.drand.sh", "https://drand.cloudflare.com"],
+  // Informação da cadeia fixada aqui (não buscada na rede): a verificação BLS usa esta chave.
+  info: {
+    public_key: "83cf0f2896adee7eb8b5f01fcad3912212c437e0073e911fb90022d3e760183c8c4b450b6a0a6c3ac6a5776a2d1064510d1fec758c921cc22b0e17e63aaf4bcb5ed66304de9cf809bd274ca73bab4af5a6e9c76a4bc09e76eae8991ef5ece45a",
+    period: 3, genesis_time: 1692803367,
+    hash: "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+    groupHash: "f477d5c89f21a17c863a7f937c6a6d15859414d2be09cd448d4279af331c5d3e",
+    schemeID: "bls-unchained-g1-rfc9380", metadata: { beaconID: "quicknet" },
+  },
+};
+const ETH = {
+  genesis: 1606824023, slot: 12, confirmations: 1, chain: "ethereum-mainnet", rule: "first-block-after",
+  rpcs: ["https://ethereum-rpc.publicnode.com", "https://eth.llamarpc.com", "https://1rpc.io/eth"],
+};
+// Endpoint não oficial e calendário: A CONFIRMAR PELO RESPONSÁVEL (DECISIONS.md).
+const LOTTERY = {
+  api: "https://servicebus2.caixa.gov.br/portaldeloterias/api/",
+  games: {
+    megasena: { label: "Mega-Sena", page: "https://loterias.caixa.gov.br/Paginas/Mega-Sena.aspx" },
+    federal: { label: "Loteria Federal", page: "https://loterias.caixa.gov.br/Paginas/Federal.aspx" },
+  },
+  calendar: {
+    megasena: { weekdays: [2, 4, 6], time: "21:00", ref: null },
+    federal: { weekdays: [3, 6], time: "19:00", ref: null },
+  },
+  tzOffsetMin: -180, // horário de Brasília, sem horário de verão desde 2019
+};
+const LEAD_MS = { drand: 6000, "eth+drand": 36000, lotteryDrand: 2 * 3600 * 1000, lotteryMin: 2 * 3600 * 1000 };
+const OID = { sha256: "2.16.840.1.101.3.4.2.1", signedData: "1.2.840.113549.1.7.2", tstInfo: "1.2.840.113549.1.9.16.1.4" };
+
+// ---- bytes, hashes
+const enc = new TextEncoder();
+const bytesToHex = (b) => Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+function hexToBytes(h) {
+  if (typeof h !== "string" || h.length % 2 || /[^0-9a-f]/i.test(h)) throw new Error("hex inválido");
+  const out = new Uint8Array(h.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(h.substr(i * 2, 2), 16);
+  return out;
+}
+function b64ToBytes(s) {
+  if (typeof s !== "string" || !/^[A-Za-z0-9+/]*={0,2}$/.test(s) || s.length % 4) throw new Error("base64 inválido");
+  const bin = atob(s); const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+async function sha256Bytes(bytes) { return new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)); }
+async function sha256hex(str) { return bytesToHex(await sha256Bytes(enc.encode(str))); }
+
+// ---- canonical encoding (SPEC 3.1)
+function cmpCodePoints(a, b) {
+  const A = Array.from(a), B = Array.from(b);
+  for (let i = 0; i < Math.min(A.length, B.length); i++) {
+    const x = A[i].codePointAt(0), y = B[i].codePointAt(0);
+    if (x !== y) return x < y ? -1 : 1;
+  }
+  return A.length - B.length;
+}
+function checkJsonTypes(v, path = "spec") {
+  if (typeof v === "boolean") throw new Error(STR.ck.spec.bool(path));
+  if (typeof v === "number") { if (!Number.isSafeInteger(v)) throw new Error(STR.ck.spec.float(path)); return; }
+  if (v === null || typeof v === "string") return;
+  if (Array.isArray(v)) { v.forEach((x, i) => checkJsonTypes(x, path + "[" + i + "]")); return; }
+  if (typeof v === "object") { for (const k of Object.keys(v)) checkJsonTypes(v[k], path + "." + k); return; }
+  throw new Error(STR.ck.spec.type(path));
+}
+// Igual a json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False).
+function canon(v) {
+  if (Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
+  if (v && typeof v === "object") {
+    return "{" + Object.keys(v).sort(cmpCodePoints).map((k) => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}";
+  }
+  if (typeof v === "number" && !Number.isSafeInteger(v)) throw new Error(STR.ck.spec.float("spec"));
+  if (typeof v === "boolean") throw new Error(STR.ck.spec.bool("spec"));
+  return JSON.stringify(v);
+}
+const normText = (s) => String(s).normalize("NFC").trim();
+const normHex = (h) => String(h || "").toLowerCase().replace(/^0x/, "");
+function parseNames(text) {
+  const names = [], seen = new Set(), dups = [];
+  String(text).split(/\r?\n/).forEach((line) => {
+    const n = normText(line);
+    if (!n) return;
+    if (seen.has(n)) dups.push(n); else seen.add(n);
+    names.push(n);
+  });
+  return { names, dups: [...new Set(dups)] };
+}
+async function commitmentOf(spec) { checkJsonTypes(spec); return sha256hex(canon(spec)); }
+
+// ---- order (SPEC 5)
+function seedV2(C, values) {
+  const lines = [VERSION, "seed", C].concat(SOURCE_ORDER.map((k) => k + "=" + (values[k] || "-")));
+  return sha256hex(lines.join("\n"));
+}
+const keyV2 = (seed, name) => sha256hex(VERSION + "\nkey\n" + seed + "\n" + name);
+async function orderV2(seed, names) {
+  const rows = await Promise.all(names.map(async (name) => ({ name, key: await keyV2(seed, name) })));
+  rows.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : cmpCodePoints(a.name, b.name)));
+  return rows;
+}
+function seedV1(C, ethHash, drandRand) {
+  return sha256hex([V1, "seed", C, ethHash ? normHex(ethHash) : "-", drandRand ? normHex(drandRand) : "-"].join("\n"));
+}
+async function orderV1(seed, names) {
+  const rows = await Promise.all(names.map(async (name) => ({ name, key: await sha256hex(V1 + "\nkey\n" + seed + "\n" + name) })));
+  rows.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)); // sem desempate; sort estável
+  return rows;
+}
+
+// ---- source value strings (SPEC 4)
+const pad = (n, w) => String(n).padStart(w, "0");
+const megasenaValue = (contest, numbers) => contest + ":" + [...numbers].sort((a, b) => a - b).map((n) => pad(n, 2)).join("-");
+const federalValue = (contest, prizes) => contest + ":" + prizes.join("-");
+const megasenaOk = (n) => Array.isArray(n) && n.length === 6 && n.every((x) => Number.isInteger(x) && x >= 1 && x <= 60) && new Set(n).size === 6;
+const federalOk = (p) => Array.isArray(p) && p.length === 5 && p.every((x) => typeof x === "string" && /^[0-9]{5}$/.test(x));
+const lotteryEvidenceOk = (game, ev) => game === "megasena" ? megasenaOk(ev.numbers) : federalOk(ev.prizes);
+const lotteryValue = (game, contest, ev) => game === "megasena" ? megasenaValue(contest, ev.numbers) : federalValue(contest, ev.prizes);
+function sourceValues(randomness) {
+  const r = randomness || {}, out = {};
+  if (r.eth) out.eth = normHex(r.eth.hash);
+  if (r.drand) out.drand = normHex(r.drand.randomness);
+  for (const g of ["megasena", "federal"]) if (r[g]) out[g] = lotteryValue(g, r[g].contest, r[g]);
+  return out;
+}
+
+// ---- timing helpers
+const drandRoundTime = (r) => (QUICKNET.genesis + (r - 1) * QUICKNET.period) * 1000;
+// Primeira rodada publicada no instante ms ou depois (SPEC 4.2: "at or after").
+const drandRoundAtOrAfter = (ms) => Math.max(1, Math.ceil((ms - QUICKNET.genesis * 1000) / (QUICKNET.period * 1000)) + 1);
+const ethNextSlotTime = (sec) => (ETH.genesis + (Math.floor((sec - ETH.genesis) / ETH.slot) + 1) * ETH.slot) * 1000;
+function msToIso(ms) {
+  const d = new Date(ms - (ms % 1000)), base = d.toISOString().slice(0, 19);
+  return base + (ms % 1000 ? "." + pad(ms % 1000, 3) : "") + "Z";
+}
+function isoToMs(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?Z$/.exec(s || "");
+  if (!m) return null;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) + parseInt((m[7] || "0").slice(0, 3).padEnd(3, "0"), 10);
+}
+function fmtBrt(ms) {
+  try {
+    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "medium", timeZone: "America/Sao_Paulo" }).format(new Date(ms)) + " (horário de Brasília)";
+  } catch { return msToIso(ms); }
+}
+const fmtUnix = (s) => msToIso(s * 1000);
+
+// ---- calendário das loterias (SPEC 4.5)
+const tzMs = LOTTERY.tzOffsetMin * 60000;
+function brtParts(ms) { const d = new Date(ms + tzMs); return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate(), wd: d.getUTCDay() }; }
+function brtMs(dateStr, time) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr || ""), t = /^(\d{1,2}):(\d{2})$/.exec(time || "");
+  if (!m || !t) return null;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +t[1], +t[2]) - tzMs;
+}
+const dateStrOf = (p) => p.y + "-" + pad(p.m, 2) + "-" + pad(p.d, 2);
+function lotteryDrawTime(game, dateStr, calendar = LOTTERY.calendar) { return brtMs(dateStr, calendar[game].time); }
+// Datas de sorteio a partir de um dia (inclusive), segundo o calendário.
+function* drawDates(game, fromDateStr, calendar = LOTTERY.calendar) {
+  const cal = calendar[game];
+  let ms = brtMs(fromDateStr, "12:00");
+  for (let i = 0; i < 3700; i++, ms += 86400000) {
+    const p = brtParts(ms);
+    if (cal.weekdays.includes(p.wd)) yield dateStrOf(p);
+  }
+}
+// Primeiro sorteio pelo menos 2 h depois do lacre; número do concurso se houver referência.
+function suggestContest(game, sealMs, calendar = LOTTERY.calendar) {
+  const cal = calendar[game], min = sealMs + LEAD_MS.lotteryMin;
+  let date = null;
+  for (const d of drawDates(game, dateStrOf(brtParts(sealMs)), calendar)) {
+    if (lotteryDrawTime(game, d, calendar) >= min) { date = d; break; }
+  }
+  return { date, drawMs: date && lotteryDrawTime(game, date, calendar), contest: date ? contestForDate(game, date, calendar) : null };
+}
+function contestForDate(game, date, calendar = LOTTERY.calendar) {
+  const ref = calendar[game].ref;
+  if (!ref || !Number.isInteger(ref.contest) || !ref.date || date < ref.date) return null;
+  let n = ref.contest;
+  for (const d of drawDates(game, ref.date, calendar)) { if (d === ref.date) continue; if (d > date) break; n++; }
+  return n;
+}
+function dateForContest(game, contest, calendar = LOTTERY.calendar) {
+  const ref = calendar[game].ref;
+  if (!ref || !Number.isInteger(ref.contest) || !ref.date || contest < ref.contest) return null;
+  if (contest === ref.contest) return ref.date;
+  let n = ref.contest;
+  for (const d of drawDates(game, ref.date, calendar)) { if (d === ref.date) continue; if (++n === contest) return d; }
+  return null;
+}
+
+// ---- montagem do spec no lacre (SPEC 3.2, 4)
+const PRESETS = {
+  live: ["eth", "drand", "eth+drand"],
+  scheduled: ["federal", "megasena", "federal+drand", "megasena+drand"],
+};
+function planSources(preset, sealMs, lottery) {
+  const parts = preset.split("+"), sources = {};
+  if (parts.includes("eth")) {
+    sources.eth = { chain: ETH.chain, rule: ETH.rule, notBefore: Math.floor(sealMs / 1000), confirmations: ETH.confirmations };
+  }
+  const game = parts.find((p) => p === "megasena" || p === "federal");
+  if (game) sources[game] = { contest: lottery.contest };
+  if (parts.includes("drand")) {
+    const at = game ? lottery.drawMs + LEAD_MS.lotteryDrand : sealMs + (parts.includes("eth") ? LEAD_MS["eth+drand"] : LEAD_MS.drand);
+    sources.drand = { chain: "quicknet", chainHash: QUICKNET.hash, round: drandRoundAtOrAfter(at) };
+  }
+  return sources;
+}
+function buildSpec({ id, title, mode, namesText, contribution, preset, sealMs, lottery }) {
+  return {
+    v: VERSION, id: normText(id), title: normText(title || ""), mode,
+    candidates: parseNames(namesText).names, contribution: normText(contribution || ""),
+    sources: planSources(preset, sealMs, lottery),
+  };
+}
+
+// ---- spec well-formed (SPEC 9.2)
+const isInt = (x) => Number.isSafeInteger(x);
+const isNormStr = (s) => typeof s === "string" && normText(s) === s;
+function validateSpec(spec) {
+  const P = STR.ck.spec, problems = [];
+  if (!spec || typeof spec !== "object" || Array.isArray(spec)) return [P.notObject];
+  const v = spec.v;
+  try { checkJsonTypes(spec); } catch (e) { problems.push(e.message); }
+  if (v === VERSION) {
+    const expected = ["v", "id", "title", "mode", "candidates", "contribution", "sources"];
+    const keys = Object.keys(spec);
+    const missing = expected.filter((k) => !keys.includes(k)).sort(), extra = keys.filter((k) => !expected.includes(k)).sort();
+    if (missing.length) problems.push(P.missing(missing.join(", ")));
+    if (extra.length) problems.push(P.extra(extra.join(", ")));
+    if (spec.mode !== "live" && spec.mode !== "scheduled") problems.push(P.mode);
+  }
+  for (const f of ["id", "title", "contribution"]) if (f in spec && !isNormStr(spec[f])) problems.push(P.notNorm(f));
+  if (typeof spec.id !== "string" || !spec.id) problems.push(P.emptyId);
+  let cands = spec.candidates;
+  if (!Array.isArray(cands)) { problems.push(P.candsNotList); cands = []; }
+  if (cands.length < 2) problems.push(P.fewCands);
+  cands.forEach((n, i) => {
+    if (typeof n !== "string" || !n) problems.push(P.candEmpty(i + 1));
+    else if (normText(n) !== n) problems.push(P.candNotNorm(i + 1));
+  });
+  const strs = cands.filter((n) => typeof n === "string");
+  const dups = [...new Set(strs.filter((n, i) => strs.indexOf(n) !== i))].sort(cmpCodePoints);
+  if (dups.length) problems.push(P.dups(dups.join(", ")));
+  const src = spec.sources;
+  if (!src || typeof src !== "object" || Array.isArray(src) || !Object.keys(src).length) { problems.push(P.noSources); return problems; }
+  const allowed = v === VERSION ? SOURCE_ORDER : ["eth", "drand"];
+  for (const k of Object.keys(src)) if (!allowed.includes(k)) problems.push(P.unknownSource(k));
+  const strict = v === VERSION;
+  const need = (name, obj, fields) => {
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) { problems.push(P.srcNotObj(name)); return false; }
+    if (strict) {
+      const ks = Object.keys(obj).sort();
+      if (ks.length !== fields.length || [...fields].sort().some((f, i) => f !== ks[i])) { problems.push(P.srcFields(name, fields.join(", "))); return false; }
+    }
+    return true;
+  };
+  if ("eth" in src) {
+    const e = src.eth;
+    if (need("eth", e, ["chain", "rule", "notBefore", "confirmations"])) {
+      if (strict && (e.chain !== ETH.chain || e.rule !== ETH.rule)) problems.push(P.ethChain);
+      if (!isInt(e.notBefore) || !isInt(e.confirmations) || e.confirmations < 1) problems.push(P.ethNums);
+    }
+  }
+  if ("drand" in src) {
+    const d = src.drand;
+    if (need("drand", d, ["chain", "chainHash", "round"])) {
+      if (d.chainHash !== QUICKNET.hash || (strict && d.chain !== "quicknet")) problems.push(P.drandChain);
+      if (!isInt(d.round) || d.round < 1) problems.push(P.drandRound);
+    }
+  }
+  for (const g of ["megasena", "federal"]) {
+    if (g in src && need(g, src[g], ["contest"])) if (!isInt(src[g].contest) || src[g].contest < 1) problems.push(P.contest(g));
+  }
+  return problems;
+}
+
+// ---- Ethereum: primeiro bloco após o lacre (SPEC 4.1)
+// rpc: { head(): Promise<number>, block(n): Promise<{number,hash,timestamp}|null> }
+async function findEthTarget(rpc, notBefore) {
+  const headN = await rpc.head();
+  const head = await rpc.block(headN);
+  if (!head || head.timestamp <= notBefore) return { pending: true, head: headN };
+  // Há no máximo um bloco por slot: recuar "slots decorridos + 1" chega a um bloco com timestamp <= notBefore.
+  let gap = Math.floor((head.timestamp - notBefore) / ETH.slot) + 1, lo = headN - gap, loB = null;
+  for (;;) {
+    if (lo < 0) throw new Error("bloco anterior ao lacre não encontrado");
+    loB = await rpc.block(lo);
+    if (!loB) throw new Error("bloco " + lo + " indisponível");
+    if (loB.timestamp <= notBefore) break;
+    gap *= 2; lo = headN - gap;
+  }
+  let hi = headN, hiB = head;
+  while (hi - lo > 1) {
+    const mid = Math.floor((lo + hi) / 2), m = await rpc.block(mid);
+    if (!m) throw new Error("bloco " + mid + " indisponível");
+    if (m.timestamp > notBefore) { hi = mid; hiB = m; } else { lo = mid; loB = m; }
+  }
+  return { block: hiB, parent: loB };
+}
+// Espera o alvo e as confirmações; relê o alvo antes de aceitar. Nunca aceita timestamp <= notBefore.
+async function waitEthTarget(rpc, src, { sleep, onStatus = () => {}, interval = 2000, maxTries = 300 } = {}) {
+  let lastErr = null;
+  for (let tries = 0; tries < maxTries; tries++) {
+    try {
+      const t = await findEthTarget(rpc, src.notBefore);
+      if (t.pending) onStatus({ state: "pending", head: t.head });
+      else {
+        const headN = await rpc.head(), conf = headN - t.block.number;
+        if (conf >= src.confirmations) {
+          const again = await rpc.block(t.block.number), parent = await rpc.block(t.block.number - 1);
+          if (again && parent && again.hash === t.block.hash && again.timestamp > src.notBefore && parent.timestamp <= src.notBefore) {
+            return { number: again.number, hash: normHex(again.hash), timestamp: again.timestamp, parentTimestamp: parent.timestamp, confirmations: conf };
+          }
+          onStatus({ state: "reorg", number: t.block.number });
+        } else onStatus({ state: "confirming", number: t.block.number, confirmations: conf });
+      }
+    } catch (e) { lastErr = e; onStatus({ state: "error", error: e }); }
+    await sleep(interval);
+  }
+  throw lastErr || new Error(STR.errEthWait(src.confirmations));
+}
+// JSON-RPC com lista de servidores tentados em ordem.
+function makeEthRpc(endpoints, fetchJson) {
+  async function call(method, params) {
+    let last = null;
+    for (const url of endpoints()) {
+      try {
+        const j = await fetchJson(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
+        if (j.error) throw new Error(url + ": " + (j.error.message || "erro"));
+        return j.result;
+      } catch (e) { last = e; }
+    }
+    const err = new Error(STR.errEthNone); err.cause = last; throw err;
+  }
+  return {
+    head: async () => parseInt(await call("eth_blockNumber", []), 16),
+    async block(n) {
+      const b = await call("eth_getBlockByNumber", ["0x" + n.toString(16), false]);
+      return b ? { number: parseInt(b.number, 16), hash: normHex(b.hash), timestamp: parseInt(b.timestamp, 16) } : null;
+    },
+  };
+}
+
+// ---- drand (SPEC 4.2): ChainClient para drand-client com informação da cadeia fixada
+function makeDrandClient(fetchJson, endpoints = QUICKNET.endpoints, info = QUICKNET.info) {
+  const get = async (path) => {
+    let last = null;
+    for (const base of endpoints) {
+      try { return await fetchJson(base + "/" + info.hash + path); } catch (e) { last = e; }
+    }
+    throw last || new Error("drand indisponível");
+  };
+  const clean = (j) => ({ round: j.round, randomness: j.randomness, signature: j.signature });
+  return {
+    options: { disableBeaconVerification: false, noCache: false },
+    chain: () => ({ baseUrl: endpoints[0] + "/" + info.hash, info: async () => info }),
+    get: async (round) => clean(await get("/public/" + round)),
+    latest: async () => clean(await get("/public/latest")),
+  };
+}
+// Busca uma rodada: a biblioteca verifica a assinatura BLS; aqui conferimos rodada e SHA-256(assinatura).
+async function fetchVerifiedBeacon(lib, client, round) {
+  const b = await lib.fetchBeacon(client, round); // lança erro se a assinatura BLS for inválida
+  if (b.round !== round) throw new Error(STR.errDrandRound(b.round, round));
+  const r = bytesToHex(await sha256Bytes(hexToBytes(normHex(b.signature))));
+  if (r !== normHex(b.randomness)) throw new Error(STR.errDrandMismatch);
+  return { round: b.round, randomness: normHex(b.randomness), signature: normHex(b.signature) };
+}
+
+// ---- Loterias (SPEC 4.3–4.5)
+function normalizeCaixa(game, contest, j) {
+  if (!j || typeof j !== "object") return null;
+  if (j.numero != null && parseInt(j.numero, 10) !== contest) return null;
+  const raw = j.listaDezenas || j.dezenasSorteadasOrdemSorteio || [];
+  const dm = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(j.dataApuracao || "");
+  const drawDate = dm ? dm[3] + "-" + dm[2] + "-" + dm[1] : null;
+  if (!Array.isArray(raw)) return null;
+  if (game === "megasena") {
+    const nums = raw.map((x) => parseInt(x, 10)).sort((a, b) => a - b);
+    return megasenaOk(nums) ? { game, contest, numbers: nums, drawDate } : null;
+  }
+  const prizes = raw.map((x) => { let d = String(x).replace(/\D/g, ""); while (d.length > 5 && d[0] === "0") d = d.slice(1); return d.padStart(5, "0"); });
+  return federalOk(prizes) ? { game, contest, prizes, drawDate } : null;
+}
+// Resultado normalizado, null se a fonte respondeu sem resultado, ou erro se nada respondeu.
+async function fetchLottery(fetchJson, game, contest, relayUrl) {
+  const errors = [];
+  let answered = false;
+  try {
+    const n = normalizeCaixa(game, contest, await fetchJson(LOTTERY.api + game + "/" + contest));
+    answered = true;
+    if (n) return n;
+  } catch (e) { if (e && e.status === 404) answered = true; errors.push("Caixa: " + (e && e.message)); }
+  if (relayUrl) {
+    try {
+      const j = await fetchJson(relayUrl.replace(/\/+$/, "") + "/v1/lottery/" + game + "/" + contest);
+      answered = true;
+      if (j && j.contest === contest && lotteryEvidenceOk(game, j)) {
+        return game === "megasena" ? { game, contest, numbers: [...j.numbers].sort((a, b) => a - b), drawDate: j.drawDate || null } : { game, contest, prizes: j.prizes, drawDate: j.drawDate || null };
+      }
+    } catch (e) { if (e && e.status === 404) answered = true; errors.push("relay: " + (e && e.message)); }
+  }
+  if (answered) return null;
+  throw new Error(errors.join("; ") || "sem fonte");
+}
+function parseManualLottery(game, numsText, dateStr) {
+  const parts = String(numsText).split(/[\s,;.\-]+/).filter(Boolean);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr || "")) return { error: STR.manualBadDate };
+  if (game === "megasena") {
+    const nums = parts.map((x) => (/^\d{1,2}$/.test(x) ? parseInt(x, 10) : NaN)).sort((a, b) => a - b);
+    return megasenaOk(nums) ? { numbers: nums, drawDate: dateStr } : { error: STR.manualBadMega };
+  }
+  const prizes = parts.map((x) => (/^\d{1,5}$/.test(x) ? x.padStart(5, "0") : ""));
+  return federalOk(prizes) ? { prizes, drawDate: dateStr } : { error: STR.manualBadFederal };
+}
+
+// ---- DER mínimo para TimeStampResp (SPEC 6.4: genTime e hash carimbado)
+function derRead(b, pos) {
+  if (pos + 2 > b.length) throw new Error("DER truncado");
+  const tag = b[pos];
+  if ((tag & 0x1f) === 0x1f) throw new Error("tag DER longa não suportada");
+  let len = b[pos + 1]; pos += 2;
+  if (len & 0x80) {
+    const n = len & 0x7f;
+    if (n === 0 || n > 4 || pos + n > b.length) throw new Error("comprimento DER inválido");
+    len = 0; for (let i = 0; i < n; i++) len = len * 256 + b[pos + i];
+    pos += n;
+  }
+  if (pos + len > b.length) throw new Error("DER truncado");
+  return { tag, start: pos, end: pos + len };
+}
+function derChildren(b, start, end) {
+  const out = []; let pos = start;
+  while (pos < end) { const t = derRead(b, pos); out.push({ ...t, at: pos }); pos = t.end; }
+  if (pos !== end) throw new Error("DER malformado");
+  return out;
+}
+function derOid(b) {
+  if (!b.length) throw new Error("OID vazio");
+  const first = Math.min(Math.floor(b[0] / 40), 2), parts = [first, b[0] - 40 * first];
+  let v = 0;
+  for (const c of b.subarray(1)) { v = v * 128 + (c & 0x7f); if (!(c & 0x80)) { parts.push(v); v = 0; } }
+  return parts.join(".");
+}
+function parseGeneralizedTime(s) {
+  const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(?:[.,](\d+))?Z$/.exec(s);
+  if (!m) throw new Error("genTime em formato não suportado: " + s);
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) + parseInt((m[7] || "0").slice(0, 3).padEnd(3, "0"), 10);
+}
+function parseTimestampResponse(der) {
+  const top = derRead(der, 0);
+  if (top.tag !== 0x30 || top.end !== der.length) throw new Error("TimeStampResp não é uma SEQUENCE");
+  const kids = derChildren(der, top.start, top.end);
+  if (!kids.length || kids[0].tag !== 0x30) throw new Error("PKIStatusInfo ausente");
+  const st = derChildren(der, kids[0].start, kids[0].end);
+  if (!st.length || st[0].tag !== 0x02) throw new Error("status ausente");
+  let status = 0; for (const x of der.subarray(st[0].start, st[0].end)) status = status * 256 + x;
+  if (status !== 0 && status !== 1) throw new Error("a TSA recusou o pedido (status " + status + ")");
+  if (kids.length < 2) throw new Error("token ausente");
+  const ci = derChildren(der, kids[1].start, kids[1].end);
+  if (ci.length < 2 || ci[0].tag !== 0x06 || derOid(der.subarray(ci[0].start, ci[0].end)) !== OID.signedData) throw new Error("token não é SignedData");
+  if (ci[1].tag !== 0xa0) throw new Error("conteúdo do token ausente");
+  const sdSeq = derRead(der, ci[1].start), sd = derChildren(der, sdSeq.start, sdSeq.end);
+  if (sd.length < 3 || sd[2].tag !== 0x30) throw new Error("encapContentInfo ausente");
+  const eci = derChildren(der, sd[2].start, sd[2].end);
+  if (eci.length < 2 || derOid(der.subarray(eci[0].start, eci[0].end)) !== OID.tstInfo) throw new Error("conteúdo não é TSTInfo");
+  const os = derRead(der, eci[1].start), tstSeq = derRead(der, os.start), tst = derChildren(der, tstSeq.start, tstSeq.end);
+  if (tst.length < 5) throw new Error("TSTInfo incompleto");
+  const mi = derChildren(der, tst[2].start, tst[2].end), alg = derChildren(der, mi[0].start, mi[0].end);
+  if (tst[4].tag !== 0x18) throw new Error("genTime ausente");
+  const gms = parseGeneralizedTime(new TextDecoder().decode(der.subarray(tst[4].start, tst[4].end)));
+  return { status, hashAlg: derOid(der.subarray(alg[0].start, alg[0].end)), imprint: bytesToHex(der.subarray(mi[1].start, mi[1].end)), genTimeMs: gms, genTime: msToIso(gms) };
+}
+// Converte a resposta do relay em âncoras (SPEC 6.3), descartando tokens que não carimbam C.
+function anchorsFromRelay(resp, C) {
+  const anchors = [], problems = [];
+  for (const t of (resp && Array.isArray(resp.rfc3161) ? resp.rfc3161 : [])) {
+    try {
+      const p = parseTimestampResponse(b64ToBytes(t.token));
+      if (p.hashAlg !== OID.sha256 || p.imprint !== C) throw new Error("o token não carimba este lacre");
+      anchors.push({ type: "rfc3161", tsa: String(t.tsa), token: t.token, time: p.genTime });
+    } catch (e) { problems.push(String(t && t.tsa) + ": " + e.message); }
+  }
+  if (resp && typeof resp.ots === "string" && resp.ots) anchors.push({ type: "ots", proof: resp.ots, complete: false });
+  return { anchors, problems };
+}
+const tsaName = (url) => { try { return new URL(url).host; } catch { return String(url); } };
+
+// ---- certificado e ata (SPEC 3.3, 7.3)
+function certificateOf(state) {
+  const c = { spec: state.spec, commitment: state.commitment, sealedAt: state.sealedAt, anchors: state.anchors || [], randomness: state.randomness || {} };
+  if (state.seed && state.order) { c.seed = state.seed; c.order = state.order; }
+  return c;
+}
+const certFileName = (id) => "certificado-sorteio-" + String(id).replace(/[^\p{L}\p{N}._-]+/gu, "_") + ".json";
+const links = {
+  eth: (n) => "https://etherscan.io/block/" + n,
+  drand: (r) => QUICKNET.endpoints[0] + "/" + QUICKNET.hash + "/public/" + r,
+  lottery: (g) => LOTTERY.games[g].page,
+};
+function ataText(cert) {
+  const A = STR.ata, s = cert.spec, r = cert.randomness || {}, L = [];
+  const sealedMs = Date.parse(cert.sealedAt);
+  L.push(A.head, "");
+  if (s.title) L.push(A.title + ": " + s.title);
+  L.push(A.id + ": " + s.id);
+  L.push(A.sealed + ": " + (isNaN(sealedMs) ? cert.sealedAt : fmtBrt(sealedMs) + " · " + cert.sealedAt) + " (" + A.sealedNote + ")");
+  L.push(A.count + ": " + s.candidates.length);
+  L.push(A.contrib + ": " + (s.contribution ? "\"" + s.contribution + "\"" : A.none), "");
+  L.push(A.commit + ":", cert.commitment, "");
+  L.push(A.sources + ":");
+  if (r.eth) L.push("- " + A.eth(r.eth.number, r.eth.hash, fmtUnix(r.eth.timestamp)), A.link + links.eth(r.eth.number));
+  if (r.drand) L.push("- " + A.drand(r.drand.round, r.drand.randomness), A.link + links.drand(r.drand.round));
+  for (const g of ["megasena", "federal"]) {
+    if (!r[g]) continue;
+    const v = lotteryValue(g, r[g].contest, r[g]).split(":")[1];
+    L.push("- " + A[g](r[g].contest, v, r[g].drawDate || "?"));
+    if (r[g].source === "manual") L.push(A.manual);
+    L.push(A.link + links.lottery(g));
+  }
+  L.push("", A.anchors + ":");
+  const anchors = (cert.anchors || []);
+  if (!anchors.length) L.push(A.noAnchors);
+  for (const a of anchors) {
+    if (a.type === "rfc3161") L.push("- " + A.anchorLine(tsaName(a.tsa), a.time));
+    else if (a.type === "ots") L.push("- " + (a.complete ? STR.otsComplete : STR.otsPending));
+  }
+  if (cert.seed) L.push("", A.seed + ": " + cert.seed);
+  if (cert.order) { L.push("", A.order + ":"); cert.order.forEach((n, i) => L.push((i + 1) + ". " + n)); }
+  L.push("", A.howTitle + ":", A.how(certFileName(s.id)));
+  return L.join("\n");
+}
+
+// ---- conferência (SPEC 9). deps: { eth(n) -> {block,parent,head}, drand(r) -> beacon verificado, lottery(g,c) -> normalizado|null }
+async function verifyCertificate(cert, deps = {}, opts = {}) {
+  const K = STR.ck, checks = [];
+  const add = (id, status, title, detail = "") => checks.push({ id, status, title, detail });
+  const done = (order = null) => verdictOf(cert, checks, !!opts.lotteryConfirmed, order);
+  if (!cert || typeof cert !== "object" || !cert.spec || typeof cert.spec !== "object") { add("parse", STATUS.FAIL, K.parseNoSpec); return done(); }
+  const spec = cert.spec, v = spec.v;
+  if (v !== VERSION && v !== V1) { add("parse", STATUS.FAIL, K.parseVersion(JSON.stringify(v))); return done(); }
+  if (typeof cert.commitment !== "string") { add("parse", STATUS.FAIL, K.parseNoCommit); return done(); }
+  add("parse", STATUS.PASS, K.parseOk(v));
+
+  const problems = validateSpec(spec);
+  if (problems.length) add("spec", STATUS.FAIL, K.specBad, problems.join("; "));
+  else add("spec", STATUS.PASS, K.specOk, K.specOkD(spec.candidates.length));
+
+  let C;
+  try { C = await commitmentOf(spec); } catch (e) { add("commitment", STATUS.FAIL, K.commitErr, e.message); return done(); }
+  if (C === cert.commitment) add("commitment", STATUS.PASS, K.commitOk, C);
+  else add("commitment", STATUS.FAIL, K.commitBad, "calculado " + C + ", certificado " + cert.commitment);
+
+  const sources = spec.sources && typeof spec.sources === "object" && !Array.isArray(spec.sources) ? spec.sources : {};
+  const rand = cert.randomness && typeof cert.randomness === "object" ? cert.randomness : {};
+  const indep = {}, claimed = {}, rtimes = {};
+  const obj = (x) => (x && typeof x === "object" && !Array.isArray(x) ? x : null);
+  // Um lacre (SPEC 3.3): sem aleatoriedade, sem semente e sem ordem. Fontes ficam pendentes, não falham.
+  const isSeal = !Object.keys(rand).length && !("seed" in cert) && !("order" in cert);
+  const missing = isSeal ? STATUS.UNVERIFIED : STATUS.FAIL;
+
+  if ("eth" in sources) {
+    const s = sources.eth, ev = obj(rand.eth), nb = isInt(s.notBefore) ? s.notBefore : null;
+    if (ev && typeof ev.hash === "string") claimed.eth = normHex(ev.hash);
+    if (nb !== null) rtimes.eth = nb + 1;
+    if (!ev || !isInt(ev.number)) add("eth", missing, isSeal ? K.sealPending(K.labels.eth) : K.ethMissing);
+    else {
+      let f = null, err = null;
+      try { if (!deps.eth) throw new Error("não consultado"); f = await deps.eth(ev.number); } catch (e) { err = e; }
+      if (err) add("eth", STATUS.UNVERIFIED, K.ethUnreach(ev.number), err.message);
+      else if (!f.block || !f.parent) add("eth", STATUS.FAIL, K.ethNoBlock(ev.number));
+      else {
+        const b = f.block, p = f.parent, bh = normHex(b.hash);
+        rtimes.eth = b.timestamp;
+        const isFirst = nb !== null && b.timestamp > nb && nb >= p.timestamp;
+        const conf = (isInt(f.head) ? f.head : b.number) - b.number;
+        const det = "notBefore " + fmtUnix(nb || 0) + " · bloco " + fmtUnix(b.timestamp) + " · anterior " + fmtUnix(p.timestamp) + " · " + conf + " confirmações agora";
+        if (!isFirst) add("eth", STATUS.FAIL, K.ethNotFirst(b.number), det);
+        else if (bh !== claimed.eth) { indep.eth = bh; add("eth", STATUS.FAIL, K.ethReorg(b.number), "canônico " + bh + " · certificado " + claimed.eth + " · " + det); }
+        else if ((ev.timestamp != null && ev.timestamp !== b.timestamp) || (ev.parentTimestamp != null && ev.parentTimestamp !== p.timestamp)) { indep.eth = bh; add("eth", STATUS.FAIL, K.ethTimes, det); }
+        else if (conf < (s.confirmations || 1)) { indep.eth = bh; add("eth", STATUS.WARN, K.ethFewConf(b.number, conf), det); }
+        else { indep.eth = bh; add("eth", STATUS.PASS, K.ethOk(b.number), bh + " · " + det); }
+      }
+    }
+  }
+
+  if ("drand" in sources) {
+    const rnd = sources.drand.round, ev = obj(rand.drand);
+    if (ev && typeof ev.randomness === "string") claimed.drand = normHex(ev.randomness);
+    if (isInt(rnd)) rtimes.drand = drandRoundTime(rnd) / 1000;
+    if (!ev) add("drand", missing, isSeal ? K.sealPending(K.labels.drand + " #" + rnd) : K.drandMissing(rnd));
+    else {
+      let f = null, err = null;
+      try { if (!deps.drand) throw new Error("não consultado"); f = await deps.drand(rnd); } catch (e) { err = e; }
+      if (err) add("drand", STATUS.UNVERIFIED, K.drandUnreach(rnd), err.message);
+      else {
+        let shaOk = false;
+        try { shaOk = bytesToHex(await sha256Bytes(hexToBytes(normHex(f.signature)))) === normHex(f.randomness); } catch { shaOk = false; }
+        const rv = normHex(f.randomness);
+        if (f.round !== rnd) add("drand", STATUS.FAIL, K.drandRound(f.round, rnd));
+        else if (!shaOk) add("drand", STATUS.FAIL, K.drandSha);
+        else if (rv !== claimed.drand) { indep.drand = rv; add("drand", STATUS.FAIL, K.drandOtherValue(rnd), "farol " + rv + " · certificado " + claimed.drand); }
+        else { indep.drand = rv; add("drand", STATUS.PASS, K.drandOk(rnd), rv); }
+      }
+    }
+  }
+
+  for (const game of ["megasena", "federal"]) {
+    if (!(game in sources)) continue;
+    const label = LOTTERY.games[game].label, contest = sources[game].contest, ev = obj(rand[game]), link = LOTTERY.games[game].page;
+    const okEv = !!ev && ev.contest === contest && lotteryEvidenceOk(game, ev);
+    const manual = ev && ev.source === "manual" ? K.lotManual : "";
+    if (!okEv) { add(game, missing, isSeal ? K.sealPending(label + ", concurso " + contest) : K.lotMissing(label, contest)); continue; }
+    claimed[game] = lotteryValue(game, contest, ev);
+    const t = lotteryDrawTime(game, ev.drawDate || "");
+    if (t) rtimes[game] = t / 1000;
+    let f = null, err = null;
+    try { if (!deps.lottery) throw new Error("não consultado"); f = await deps.lottery(game, contest); } catch (e) { err = e; }
+    if (f && !err) {
+      const off = lotteryValue(game, contest, f);
+      indep[game] = off;
+      const t2 = f.drawDate && lotteryDrawTime(game, f.drawDate);
+      if (t2) rtimes[game] = t2 / 1000;
+      if (off === claimed[game]) add(game, STATUS.PASS, K.lotOk(label, contest, manual), off + " · " + link);
+      else add(game, STATUS.FAIL, K.lotBad(label, contest, manual), "oficial " + off + " · certificado " + claimed[game] + " · " + link);
+    } else {
+      add(game, STATUS.UNVERIFIED, K.lotUnverified(label, contest, manual), "números usados: " + claimed[game] + " · " + link + " · (" + (err ? err.message : K.lotNoResult) + ")");
+    }
+  }
+
+  const names = Array.isArray(spec.candidates) ? spec.candidates : [];
+  const keys = Object.keys(sources), used = {};
+  for (const k of keys) used[k] = indep[k] || claimed[k];
+  const allIndep = keys.filter((k) => k !== "megasena" && k !== "federal").every((k) => k in indep);
+  let computed = null;
+  if (!keys.every((k) => used[k])) add("order", cert.order ? STATUS.FAIL : STATUS.UNVERIFIED, K.orderMissing, K.orderMissingD);
+  else {
+    const seed = v === VERSION ? await seedV2(C, used) : await seedV1(C, used.eth, used.drand);
+    const rows = v === VERSION ? await orderV2(seed, names) : await orderV1(seed, names);
+    computed = rows.map((x) => x.name);
+    const sameOrder = Array.isArray(cert.order) && cert.order.length === computed.length && computed.every((n, i) => n === cert.order[i]);
+    const preview = computed.slice(0, 3).map((n, i) => (i + 1) + ". " + n).join(" · ") + (computed.length > 3 ? " …" : "");
+    if (cert.seed !== seed) add("order", STATUS.FAIL, K.seedBad, "recalculada " + seed + " · certificado " + cert.seed);
+    else if (!sameOrder) add("order", STATUS.FAIL, K.orderBad, "correta: " + preview);
+    else if (!allIndep) add("order", STATUS.UNVERIFIED, K.orderPartial, preview);
+    else add("order", STATUS.PASS, K.orderOk, "semente " + seed + " · " + preview);
+  }
+
+  const anchors = Array.isArray(cert.anchors) ? cert.anchors : [];
+  const times = [], notes = [], bad = [];
+  for (const a of anchors) {
+    if (!obj(a)) { bad.push(K.anchorInvalid); continue; }
+    if (a.type === "rfc3161") {
+      const tsa = a.tsa || "?";
+      let p;
+      try { p = parseTimestampResponse(b64ToBytes(a.token || "")); } catch (e) { bad.push(K.anchorUnread(tsa, e.message)); continue; }
+      if (p.hashAlg !== OID.sha256 || p.imprint !== C) { bad.push(K.anchorOther(tsa)); continue; }
+      if (a.time != null && isoToMs(a.time) !== p.genTimeMs) { bad.push(K.anchorTime(tsa, p.genTime)); continue; }
+      times.push(p.genTimeMs);
+      notes.push(tsa + ": " + p.genTime + " (" + K.anchorNoSig + ")");
+    } else if (a.type === "ots") notes.push(K.otsNote(!!a.complete));
+    else bad.push(K.anchorUnknown(a.type));
+  }
+  if (anchors.length) {
+    if (bad.length) add("anchors", STATUS.FAIL, K.anchorsBad, bad.concat(notes).join("; "));
+    else add("anchors", STATUS.PASS, K.anchorsOk, notes.join("; "));
+  }
+  const tkeys = keys.filter((k) => k in rtimes), noTime = keys.filter((k) => !(k in rtimes));
+  const deadline = tkeys.length ? Math.min(...tkeys.map((k) => rtimes[k])) : null;
+  if (!times.length) add("timing", STATUS.WARN, K.timingNone, deadline !== null ? K.timingNoneD(fmtUnix(deadline)) : "");
+  else {
+    const earliest = Math.min(...times); let ok = true;
+    const parts = tkeys.map((k) => { const before = earliest < rtimes[k] * 1000; ok = ok && before; return msToIso(earliest) + (before ? " < " : " ≥ ") + K.labels[k] + " " + fmtUnix(rtimes[k]); });
+    if (noTime.length) add("timing", STATUS.UNVERIFIED, K.timingPartial, parts.concat(noTime.map((k) => K.timingUnknown(K.labels[k]))).join("; "));
+    else if (ok) add("timing", STATUS.PASS, K.timingOk, parts.join("; "));
+    else add("timing", STATUS.FAIL, K.timingBad, parts.join("; "));
+  }
+  return done(computed);
+}
+function verdictOf(cert, checks, lotteryConfirmed, order) {
+  const fails = checks.filter((c) => c.status === STATUS.FAIL);
+  const open = checks.filter((c) => (c.status === STATUS.UNVERIFIED || c.status === STATUS.WARN) && !(lotteryConfirmed && (c.id === "megasena" || c.id === "federal") && c.status === STATUS.UNVERIFIED));
+  let verdict, message;
+  if (fails.length) { verdict = "nao_confere"; message = STR.verdictBad(fails.map((c) => c.title).join("; ")); }
+  else if (open.length) { verdict = "incompleto"; message = STR.verdictIncomplete(open.map((c) => c.title).join("; ")); }
+  else { verdict = "confere"; message = STR.verdictOk; }
+  const spec = cert && cert.spec && typeof cert.spec === "object" ? cert.spec : {};
+  return { drawId: spec.id, version: spec.v, checks, verdict, message, order };
+}
+
+const CORE = Object.freeze({
+  STR, VERSION, V1, SOURCE_ORDER, STATUS, QUICKNET, ETH, LOTTERY, LEAD_MS, PRESETS, OID,
+  bytesToHex, hexToBytes, b64ToBytes, sha256hex, sha256Bytes, cmpCodePoints, canon, normText, normHex, parseNames,
+  checkJsonTypes, commitmentOf, seedV2, keyV2, orderV2, seedV1, orderV1, megasenaValue, federalValue, lotteryValue,
+  sourceValues, drandRoundTime, drandRoundAtOrAfter, ethNextSlotTime, msToIso, isoToMs, fmtBrt, fmtUnix,
+  lotteryDrawTime, suggestContest, contestForDate, dateForContest, brtMs, planSources, buildSpec, validateSpec,
+  findEthTarget, waitEthTarget, makeEthRpc, makeDrandClient, fetchVerifiedBeacon, normalizeCaixa, fetchLottery,
+  parseManualLottery, parseTimestampResponse, anchorsFromRelay, tsaName, certificateOf, certFileName, links, ataText,
+  verifyCertificate, verdictOf,
+});
+// ---------------------------------------------------------------- CORE-END
+
+// ================================================================ página (DOM)
+const $ = (id) => document.getElementById(id);
+const el = (tag, props = {}, ...kids) => { const e = document.createElement(tag); Object.assign(e, props); e.append(...kids); return e; };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Textos estáticos a partir da tabela STR.
+document.querySelectorAll("[data-s]").forEach((n) => { n.textContent = STR[n.dataset.s]; });
+document.querySelectorAll("[data-s-aria]").forEach((n) => n.setAttribute("aria-label", STR[n.dataset.sAria]));
+document.querySelectorAll("[data-s-ph]").forEach((n) => n.setAttribute("placeholder", STR[n.dataset.sPh]));
+$("drandInfo").textContent = STR.drandInfo(QUICKNET.hash);
+$("ruleCode").textContent = [
+  "import hashlib, json",
+  "H = lambda s: hashlib.sha256(s.encode()).hexdigest()",
+  "cert = json.load(open(\"certificado-sorteio-ID.json\"))",
+  "spec = cert[\"spec\"]",
+  "C = H(json.dumps(spec, sort_keys=True, separators=(\",\", \":\"), ensure_ascii=False))",
+  "vals = {...}  # eth: hash do bloco; drand: randomness; megasena: \"3001:04-12-23-35-41-58\"",
+  "seed = H(\"\\n\".join([\"LucentDraw/2\", \"seed\", C] + [k + \"=\" + vals.get(k, \"-\") for k in (\"eth\", \"drand\", \"megasena\", \"federal\")]))",
+  "order = sorted(spec[\"candidates\"], key=lambda n: (H(\"LucentDraw/2\\nkey\\n\" + seed + \"\\n\" + n), n))",
+  "print(C == cert[\"commitment\"], order == cert[\"order\"])",
+].join("\n");
+
+// ---- armazenamento local (sempre em try/catch)
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem("sorteiolucido." + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("sorteiolucido." + k, JSON.stringify(v)); return true; } catch { return false; } },
+  del(k) { try { localStorage.removeItem("sorteiolucido." + k); } catch {} },
+};
+
+// ---- tema
+const THEMES = ["auto", "light", "dark"];
+function applyTheme(t) {
+  if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.dataset.theme = t;
+  $("themeBtn").textContent = STR[{ auto: "themeAuto", light: "themeLight", dark: "themeDark" }[t]];
+}
+let theme = LS.get("theme", "auto"); if (!THEMES.includes(theme)) theme = "auto";
+applyTheme(theme);
+$("themeBtn").addEventListener("click", () => { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; LS.set("theme", theme); applyTheme(theme); });
+
+// ---- abas (setas do teclado entre abas)
+const TABS = [["tab-run", "view-run"], ["tab-verify", "view-verify"]];
+function selectTab(tab) {
+  for (const [t, v] of TABS) { const on = t === tab; $(t).setAttribute("aria-selected", String(on)); $(t).tabIndex = on ? 0 : -1; $(v).hidden = !on; }
+}
+for (const [t] of TABS) {
+  $(t).addEventListener("click", () => selectTab(t));
+  $(t).addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const other = TABS.find(([x]) => x !== t)[0]; selectTab(other); $(other).focus();
+  });
+}
+
+// ---- configurações
+const savedSettings = LS.get("settings", {}) || {};
+const settings = { rpcs: [...ETH.rpcs], relay: "", ...savedSettings, calendar: {} };
+for (const g of ["megasena", "federal"]) settings.calendar[g] = { ...LOTTERY.calendar[g], ...((savedSettings.calendar || {})[g] || {}) };
+if (!Array.isArray(settings.rpcs) || !settings.rpcs.length) settings.rpcs = [...ETH.rpcs];
+const saveSettings = () => LS.set("settings", settings);
+$("rpcs").value = settings.rpcs.join("\n");
+$("relay").value = settings.relay;
+$("rpcs").addEventListener("change", () => { settings.rpcs = $("rpcs").value.split(/\s+/).map((s) => s.trim()).filter(Boolean); saveSettings(); });
+$("relay").addEventListener("change", () => { settings.relay = $("relay").value.trim(); saveSettings(); });
+function renderCalendar() {
+  const box = $("calendarBox"); box.replaceChildren();
+  for (const g of ["federal", "megasena"]) {
+    const c = settings.calendar[g];
+    const days = el("input", { type: "text", value: c.weekdays.join(" "), id: "cal-days-" + g });
+    const time = el("input", { type: "time", value: c.time, id: "cal-time-" + g });
+    const refC = el("input", { type: "number", min: 1, value: c.ref ? c.ref.contest : "", id: "cal-refc-" + g });
+    const refD = el("input", { type: "date", value: c.ref ? c.ref.date : "", id: "cal-refd-" + g });
+    const save = () => {
+      c.weekdays = days.value.split(/[\s,]+/).map((x) => parseInt(x, 10)).filter((x) => x >= 0 && x <= 6);
+      if (/^\d{1,2}:\d{2}$/.test(time.value)) c.time = time.value;
+      const rc = parseInt(refC.value, 10);
+      c.ref = rc > 0 && /^\d{4}-\d{2}-\d{2}$/.test(refD.value) ? { contest: rc, date: refD.value } : null;
+      saveSettings(); refreshLottery(true);
+    };
+    for (const i of [days, time, refC, refD]) i.addEventListener("change", save);
+    const grp = el("fieldset", { className: "f" }, el("legend", { textContent: LOTTERY.games[g].label }));
+    grp.style.cssText = "border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:6px;min-width:0";
+    for (const [lab, inp] of [[STR.calDays, days], [STR.calTime, time], [STR.calRefContest, refC], [STR.calRefDate, refD]]) {
+      grp.append(el("label", { className: "f", htmlFor: inp.id }, el("small", { textContent: lab }), inp));
+    }
+    box.append(grp);
+  }
+}
+renderCalendar();
+
+// ---- rede
+async function fetchJson(url, opts = {}) {
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), opts.timeout || 15000);
+  try {
+    const r = await fetch(url, { ...opts, signal: ctl.signal, cache: "no-store" });
+    if (!r.ok) { const e = new Error(tsaName(url) + " respondeu HTTP " + r.status); e.status = r.status; throw e; }
+    return await r.json();
+  } catch (e) {
+    if (e.name === "AbortError") throw new Error(tsaName(url) + " não respondeu a tempo");
+    throw e;
+  } finally { clearTimeout(timer); }
+}
+const ethRpc = makeEthRpc(() => settings.rpcs, fetchJson);
+let drandMod = null;
+async function drandLib() { if (!drandMod) drandMod = await import("drand-client"); return drandMod; }
+const drandClient = makeDrandClient(fetchJson);
+async function getDrand(round) { return fetchVerifiedBeacon(await drandLib(), drandClient, round); }
+const getLottery = (game, contest) => fetchLottery(fetchJson, game, contest, settings.relay);
+async function ethEvidence(n) { const [head, block, parent] = [await ethRpc.head(), await ethRpc.block(n), await ethRpc.block(n - 1)]; return { head, block, parent }; }
+
+// ---- UI: utilidades
+function showMsg(node, text, kind) { node.textContent = text || ""; node.hidden = !text; if (kind) node.className = "msg " + kind; }
+function kv(dl, pairs) {
+  dl.replaceChildren();
+  for (const [k, v, href] of pairs) {
+    const dd = el("dd");
+    if (href) dd.append(el("a", { href, target: "_blank", rel: "noopener noreferrer", textContent: v })); else dd.textContent = v;
+    dl.append(el("dt", { textContent: k }), dd);
+  }
+}
+async function copyText(text, note) {
+  try { await navigator.clipboard.writeText(text); note.textContent = STR.copied; setTimeout(() => (note.textContent = ""), 2000); }
+  catch { const t = $("copyFallback"); t.value = text; t.hidden = false; t.select(); note.textContent = STR.copyManual; }
+}
+function download(name, text) {
+  const a = el("a", { href: URL.createObjectURL(new Blob([text], { type: "application/json" })), download: name });
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ---- Preparar
+const mode = () => document.querySelector('input[name="mode"]:checked').value;
+const preset = () => (document.querySelector('input[name="preset"]:checked') || {}).value;
+const presetGame = (p) => (p || "").split("+").find((x) => x === "megasena" || x === "federal");
+function renderPresets(selected) {
+  const box = $("presetBox"); box.replaceChildren();
+  PRESETS[mode()].forEach((p, i) => {
+    const input = el("input", { type: "radio", name: "preset", value: p, checked: selected ? p === selected : i === 0 });
+    input.addEventListener("change", () => refreshLottery(true));
+    box.append(el("label", { className: "src" }, input, el("b", { textContent: STR.presets[p][0] }), el("span", { textContent: STR.presets[p][1] })));
+  });
+  refreshLottery(true);
+}
+document.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener("change", () => renderPresets()));
+function refreshLottery(suggest) {
+  const g = presetGame(preset());
+  $("lotteryBox").hidden = !g; $("lotteryNote").hidden = !g;
+  if (!g) return;
+  const cal = settings.calendar[g];
+  $("drawTimeHint").textContent = "às " + cal.time + " (Brasília)";
+  if (suggest && !current) {
+    const s = suggestContest(g, Date.now(), settings.calendar);
+    if (s.date) $("drawDate").value = s.date;
+    if (s.contest) $("contest").value = s.contest;
+    $("contestHint").textContent = s.contest ? "sugerido pelo calendário" : "consulte o próximo concurso no site da Caixa";
+  }
+  $("lotteryNote").textContent = "Data assumida: " + ($("drawDate").value || "?") + " às " + cal.time + " (Brasília). O sorteio precisa ser pelo menos 2 horas após o lacre; confira o concurso e a data em " + LOTTERY.games[g].page;
+}
+$("contest").addEventListener("input", () => {
+  const g = presetGame(preset()); if (!g) return;
+  const d = dateForContest(g, parseInt($("contest").value, 10), settings.calendar);
+  if (d) $("drawDate").value = d;
+  refreshLottery(false);
+});
+$("drawDate").addEventListener("change", () => refreshLottery(false));
+
+function refreshCount() {
+  const { names, dups } = parseNames($("cands").value);
+  $("candCount").textContent = STR.candCount(names.length);
+  showMsg($("candErr"), dups.length ? STR.dupNames(dups.join(", ")) : "");
+}
+$("cands").addEventListener("input", refreshCount);
+
+function lockForm(locked) {
+  for (const id of ["title", "drawId", "cands", "contrib", "contest", "drawDate", "sealBtn"]) $(id).disabled = locked;
+  document.querySelectorAll('input[name="preset"], input[name="mode"]').forEach((r) => (r.disabled = locked));
+}
+
+// ---- estado do sorteio atual
+let current = null; // { spec, commitment, sealedAt, anchors, randomness, seed, order, meta }
+let ticker = null, waiting = false;
+const draws = () => LS.get("draws", {});
+function persist() {
+  if (!current) return;
+  const all = draws(); all[current.spec.id] = current;
+  const ok = LS.set("draws", all) && LS.set("current", current.spec.id);
+  if (!ok) showMsg($("runErr"), STR.errStorage);
+  renderSaved();
+}
+function renderSaved() {
+  const all = draws(), ids = Object.keys(all).filter((id) => !current || id !== current.spec.id);
+  $("savedWrap").hidden = !ids.length;
+  const ul = $("savedList"); ul.replaceChildren();
+  for (const id of ids) {
+    const b = el("button", { className: "btn quiet", type: "button", textContent: STR.reopen });
+    b.addEventListener("click", () => { if (waiting) return; openDraw(all[id]); });
+    ul.append(el("li", {}, el("span", { textContent: id + " · " + (all[id].order ? STR.savedDone : STR.savedPending) }), b));
+  }
+}
+
+// ---- linha do tempo
+const TL = ["prep", "seal", "anchor", "eth", "drand", "megasena", "federal", "result"];
+function renderTimeline() {
+  const ol = $("timeline"); ol.replaceChildren();
+  const names = { prep: [STR.tlPrep, STR.tlPrepD], seal: [STR.tlSeal, STR.tlSealD], anchor: [STR.tlAnchor, STR.tlAnchorIdle], eth: [STR.tlEth, STR.tlNotUsed], drand: [STR.tlDrand, STR.tlNotUsed], megasena: [STR.tlMegasena, STR.tlNotUsed], federal: [STR.tlFederal, STR.tlNotUsed], result: [STR.tlResult, STR.tlResultD] };
+  const used = current ? Object.keys(current.spec.sources) : [];
+  for (const k of TL) {
+    if (["eth", "drand", "megasena", "federal"].includes(k) && current && !used.includes(k)) continue;
+    if (["megasena", "federal"].includes(k) && !current) continue;
+    ol.append(el("li", { id: "tl-" + k }, el("span", { className: "dot" }), el("div", {}, el("div", { className: "t", textContent: names[k][0] }), el("div", { className: "d", textContent: names[k][1] }))));
+    $("tl-" + k).dataset.s = k === "prep" ? "active" : "idle";
+  }
+}
+function setStep(k, state, detail) { const li = $("tl-" + k); if (!li) return; li.dataset.s = state; if (detail !== undefined) li.querySelector(".d").textContent = detail; }
+
+// ---- Lacrar
+$("sealBtn").addEventListener("click", seal);
+$("otherIdBtn").addEventListener("click", () => { $("drawId").value = ""; $("otherIdBtn").hidden = true; showMsg($("sealErr"), ""); $("drawId").focus(); });
+async function seal() {
+  showMsg($("sealErr"), ""); showMsg($("runErr"), ""); $("otherIdBtn").hidden = true;
+  const { names, dups } = parseNames($("cands").value);
+  const id = normText($("drawId").value), p = preset(), g = presetGame(p);
+  if (!id) return showMsg($("sealErr"), STR.errNoId);
+  if (names.length < 2) return showMsg($("sealErr"), STR.errFewNames);
+  if (dups.length) return showMsg($("sealErr"), STR.errDups);
+  if (LS.get("sealedIds", []).includes(id) || id in draws()) { $("otherIdBtn").hidden = false; return showMsg($("sealErr"), STR.errIdUsed(id)); }
+  let lottery = null;
+  if (g) {
+    const contest = Number($("contest").value);
+    if (!Number.isSafeInteger(contest) || contest < 1) return showMsg($("sealErr"), STR.errContest);
+    const drawMs = lotteryDrawTime(g, $("drawDate").value, settings.calendar);
+    if (!drawMs) return showMsg($("sealErr"), STR.errDrawDate);
+    lottery = { contest, drawMs };
+  }
+  lockForm(true); $("sealBtn").textContent = STR.sealing;
+  try {
+    if (p.includes("eth")) await ethRpc.head(); // falha cedo se nenhum servidor responde
+    const now = Date.now();
+    if (lottery && lottery.drawMs < now + LEAD_MS.lotteryMin) throw Object.assign(new Error(STR.errDrawTooSoon), { plain: true });
+    const spec = buildSpec({ id, title: $("title").value, mode: mode(), namesText: $("cands").value, contribution: $("contrib").value, preset: p, sealMs: now, lottery });
+    const problems = validateSpec(spec);
+    if (problems.length) throw Object.assign(new Error(problems.join("; ")), { plain: true });
+    const commitment = await commitmentOf(spec);
+    current = { spec, commitment, sealedAt: new Date(now).toISOString(), anchors: [], randomness: {}, meta: { preset: p, lotteryDrawMs: lottery ? lottery.drawMs : null } };
+    LS.set("sealedIds", [...new Set([...LS.get("sealedIds", []), id])]);
+    persist();
+    renderTimeline(); showSeal();
+    anchor(); // em paralelo: o carimbo não pode atrasar a espera
+    await waitAndDraw();
+  } catch (e) {
+    if (!current) { lockForm(false); showMsg($("sealErr"), e.plain ? e.message : STR.errSealFailed(e.message)); }
+    else showMsg($("runErr"), STR.errWait(e.message));
+  } finally { $("sealBtn").textContent = STR.sealBtn; }
+}
+
+function showSeal() {
+  const { spec, commitment, sealedAt } = current;
+  $("sealPanel").hidden = false; $("resultPanel").hidden = false;
+  $("commitHash").textContent = commitment;
+  const s = spec.sources, facts = [[STR.factId, spec.id], [STR.factCount, String(spec.candidates.length)], [STR.factSealed, fmtBrt(Date.parse(sealedAt))]];
+  if (s.eth) facts.push([STR.factEth, STR.factEthPlan(fmtBrt(s.eth.notBefore * 1000), s.eth.confirmations)]);
+  if (s.drand) facts.push([STR.factDrand, STR.factDrandPlan(s.drand.round, fmtBrt(drandRoundTime(s.drand.round)))]);
+  for (const g of ["megasena", "federal"]) if (s[g]) facts.push([LOTTERY.games[g].label, STR.factLotteryPlan(s[g].contest, current.meta.lotteryDrawMs ? fmtBrt(current.meta.lotteryDrawMs) : "?")]);
+  kv($("sealFacts"), facts);
+  kv($("sealTech"), [[STR.factCommit, commitment], ["sealedAt", sealedAt], [STR.factRelay, settings.relay || "—"], [STR.factRpcs, settings.rpcs.join(" ")]]);
+  $("specJson").textContent = JSON.stringify(spec, null, 2);
+  setStep("prep", "done", STR.candCount(spec.candidates.length));
+  setStep("seal", "done", commitment.slice(0, 16) + "…");
+  renderAnchors();
+  for (const k of Object.keys(s)) setStep(k, "active");
+  if (s.drand) setStep("drand", "active", STR.tlDrandWait(s.drand.round));
+  for (const g of ["megasena", "federal"]) if (s[g]) setStep(g, "active", STR.tlLotteryWait(s[g].contest, current.meta.lotteryDrawMs ? fmtBrt(current.meta.lotteryDrawMs) : "?"));
+  $("resultTitle").textContent = STR.pendingTitle;
+  startCountdown();
+}
+
+// ---- carimbos de tempo (relay, SPEC 6)
+async function anchor() {
+  if (!settings.relay) { renderAnchors(STR.noRelay, "warn"); setStep("anchor", "warn", STR.noRelay); return; }
+  renderAnchors(STR.anchoring, "warn"); setStep("anchor", "active", STR.anchoring);
+  const C = current.commitment, state = current;
+  try {
+    const resp = await fetchJson(settings.relay.replace(/\/+$/, "") + "/v1/timestamp", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ hash: C }), timeout: 30000 });
+    const { anchors, problems } = anchorsFromRelay(resp, C);
+    state.anchors = anchors;
+    if (state === current) persist(); else { const all = draws(); all[state.spec.id] = state; LS.set("draws", all); }
+    if (state !== current) return;
+    const rf = anchors.filter((a) => a.type === "rfc3161");
+    if (!rf.length) { renderAnchors(STR.relayFailed(problems.join("; ") || "sem tokens"), "warn"); setStep("anchor", "warn"); return; }
+    renderAnchors(problems.length ? STR.anchorPartial(problems.join("; ")) : null, problems.length ? "warn" : "ok");
+    setStep("anchor", "done", rf.map((a) => tsaName(a.tsa) + " " + a.time).join(" · "));
+    if (current.order) renderDone();
+  } catch (e) {
+    if (state !== current) return;
+    renderAnchors(STR.relayFailed(e.message), "warn"); setStep("anchor", "warn", STR.noRelay);
+  }
+}
+function renderAnchors(extra, kind) {
+  const a = (current && current.anchors) || [];
+  const rf = a.filter((x) => x.type === "rfc3161"), ots = a.find((x) => x.type === "ots");
+  const parts = [];
+  if (rf.length) parts.push(STR.anchored(rf.map((x) => tsaName(x.tsa) + " " + x.time).join(", ")));
+  if (ots) parts.push(ots.complete ? STR.otsComplete : STR.otsPending);
+  if (extra) parts.push(extra);
+  if (!parts.length && current && !settings.relay) parts.push(STR.noRelay);
+  showMsg($("anchorMsg"), parts.join(" "), kind || (rf.length ? "ok" : "warn"));
+  $("otsUpgrade").hidden = !(ots && !ots.complete && settings.relay);
+  if (rf.length) setStep("anchor", "done", rf.map((x) => tsaName(x.tsa) + " " + x.time).join(" · "));
+}
+$("otsUpgrade").addEventListener("click", upgradeOts);
+async function upgradeOts() {
+  const ots = current && current.anchors.find((x) => x.type === "ots");
+  if (!ots || ots.complete || !settings.relay) return;
+  try {
+    const r = await fetchJson(settings.relay.replace(/\/+$/, "") + "/v1/ots/upgrade", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ots: ots.proof }), timeout: 30000 });
+    if (typeof r.ots === "string" && r.ots) { ots.proof = r.ots; ots.complete = r.complete === true; persist(); renderAnchors(); if (current.order) renderDone(); }
+  } catch (e) { renderAnchors(STR.relayFailed(e.message), "warn"); }
+}
+
+// ---- contagem regressiva (só UX; usa o relógio local)
+function expectedMs() {
+  const s = current.spec.sources, t = [];
+  if (s.eth) t.push(ethNextSlotTime(s.eth.notBefore) + s.eth.confirmations * ETH.slot * 1000 + 4000);
+  if (s.drand) t.push(drandRoundTime(s.drand.round));
+  if (current.meta.lotteryDrawMs) t.push(current.meta.lotteryDrawMs);
+  return Math.max(...t);
+}
+function fmtLeft(sec) {
+  if (sec <= 0) return STR.cdSoon;
+  const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return d ? d + " d " + h + " h" : h ? h + " h " + m + " min" : m ? m + " min " + s + " s" : s + " s";
+}
+function startCountdown() {
+  clearInterval(ticker);
+  const due = expectedMs(); $("cdWrap").hidden = false;
+  const tick = () => { $("countdown").textContent = fmtLeft(Math.round((due - Date.now()) / 1000)); };
+  tick(); ticker = setInterval(tick, 1000);
+}
+
+// ---- espera pelas fontes
+async function waitDrand(round) {
+  const due = drandRoundTime(round);
+  while (Date.now() < due + 300) await sleep(Math.min(30000, due + 300 - Date.now()));
+  let last;
+  for (let i = 0; i < 120; i++) {
+    try { return await getDrand(round); }
+    catch (e) { last = e; if (/assinatura|rodada|valid/i.test(e.message)) throw e; setStep("drand", "active", STR.tlRetrying); await sleep(1500); }
+  }
+  throw new Error(STR.errDrandFetch(round, last ? last.message : "tempo esgotado"));
+}
+async function pollLottery(game, contest, once) {
+  for (;;) {
+    let r = null, err = null;
+    try { r = await getLottery(game, contest); } catch (e) { err = e; }
+    if (r) return { ...r, source: "caixa-api" };
+    if (err || (current.meta.lotteryDrawMs && Date.now() > current.meta.lotteryDrawMs + 6 * 3600 * 1000)) showManual(game, contest, !!err);
+    if (once) return null;
+    await sleep(10 * 60 * 1000);
+    if (!current || current.randomness[game] || !(game in current.spec.sources)) return null;
+  }
+}
+async function waitAndDraw() {
+  if (waiting) return; waiting = true;
+  const state = current, s = state.spec.sources, r = state.randomness, jobs = [];
+  try {
+    if (r.eth) setStep("eth", "done", STR.tlEthDone(r.eth.number, r.eth.hash.slice(0, 16)));
+    if (r.drand) setStep("drand", "done", STR.tlDrandDone(r.drand.round, r.drand.randomness.slice(0, 16)));
+    for (const g of ["megasena", "federal"]) if (r[g]) setStep(g, "done", STR.tlLotteryDone(r[g].contest, lotteryValue(g, r[g].contest, r[g]).split(":")[1]));
+    if (s.drand && !r.drand) jobs.push(waitDrand(s.drand.round).then((d) => { r.drand = d; persist(); setStep("drand", "done", STR.tlDrandDone(d.round, d.randomness.slice(0, 16))); }));
+    if (s.eth && !r.eth) jobs.push(waitEthTarget(ethRpc, s.eth, {
+      sleep, onStatus: (st) => {
+        if (st.state === "pending") setStep("eth", "active", STR.tlWaitingSlot(st.head));
+        else if (st.state === "confirming") setStep("eth", "active", STR.tlConfirming(st.number, s.eth.confirmations));
+        else if (st.state === "error") setStep("eth", "active", STR.tlRetrying);
+      },
+    }).then((b) => { r.eth = b; persist(); setStep("eth", "done", STR.tlEthDone(b.number, b.hash.slice(0, 16))); }));
+    for (const g of ["megasena", "federal"]) {
+      if (s[g] && !r[g]) {
+        const lotteryJob = (async () => {
+          if (state.meta.lotteryDrawMs && Date.now() < state.meta.lotteryDrawMs) { showPending(g, s[g].contest); while (current === state && Date.now() < state.meta.lotteryDrawMs) await sleep(Math.min(60000, state.meta.lotteryDrawMs - Date.now())); }
+          if (current !== state) throw new Error("cancelado");
+          showPending(g, s[g].contest);
+          const res = await pollLottery(g, s[g].contest, false);
+          if (res && !r[g]) { r[g] = { contest: s[g].contest, ...(g === "megasena" ? { numbers: res.numbers } : { prizes: res.prizes }), drawDate: res.drawDate || "", source: "caixa-api" }; }
+          if (!r[g]) throw new Error("cancelado");
+          persist(); setStep(g, "done", STR.tlLotteryDone(r[g].contest, lotteryValue(g, r[g].contest, r[g]).split(":")[1]));
+        })();
+        lotteryJob.catch(() => {}); jobs.push(lotteryJob);
+      }
+    }
+    await Promise.all(jobs);
+  } catch (e) {
+    if (current !== state || e.message === "cancelado") return;
+    clearInterval(ticker);
+    for (const k of Object.keys(s)) if (!r[k]) setStep(k, "error");
+    showMsg($("runErr"), STR.errWait(e.message));
+    return;
+  } finally { waiting = false; }
+  if (current === state) await finish();
+}
+function showPending(game, contest) {
+  $("pendingBox").hidden = false;
+  $("pendingText").textContent = STR.pendingLottery(LOTTERY.games[game].label, contest, current.meta.lotteryDrawMs ? fmtBrt(current.meta.lotteryDrawMs) : "?");
+}
+$("fetchNow").addEventListener("click", async () => {
+  if (!current) return;
+  for (const g of ["megasena", "federal"]) {
+    const s = current.spec.sources[g];
+    if (!s || current.randomness[g]) continue;
+    const res = await pollLottery(g, s.contest, true);
+    if (res) { manualResolve(g, { contest: s.contest, ...(g === "megasena" ? { numbers: res.numbers } : { prizes: res.prizes }), drawDate: res.drawDate || "", source: "caixa-api" }); }
+  }
+});
+let manualGame = null;
+function showManual(game, contest, unreachable) {
+  manualGame = game; $("manualBox").hidden = false;
+  $("manualTitle").textContent = STR.manualTitle(LOTTERY.games[game].label, contest);
+  $("manualHint").textContent = (unreachable ? STR.lotteryUnavailable + " " : "") + STR.manualHint;
+  $("manualLink").href = LOTTERY.games[game].page; $("manualLink").textContent = STR.officialPage + " · " + LOTTERY.games[game].label;
+  $("manualNumsLabel").textContent = game === "megasena" ? STR.manualNumsMega : STR.manualNumsFederal;
+}
+$("manualSave").addEventListener("click", () => {
+  const g = manualGame; if (!g || !current) return;
+  const parsed = parseManualLottery(g, $("manualNums").value, $("manualDate").value);
+  if (parsed.error) return showMsg($("manualErr"), parsed.error);
+  if (!$("manualConfirm").checked) return showMsg($("manualErr"), STR.manualNoConfirm);
+  showMsg($("manualErr"), "");
+  manualResolve(g, { contest: current.spec.sources[g].contest, ...parsed, source: "manual" });
+});
+// Resultado de loteria obtido fora do laço de espera (botão ou entrada manual).
+function manualResolve(g, ev) {
+  if (current.randomness[g]) return;
+  current.randomness[g] = ev; persist();
+  setStep(g, "done", STR.tlLotteryDone(ev.contest, lotteryValue(g, ev.contest, ev).split(":")[1]));
+  $("manualBox").hidden = true;
+  const s = current.spec.sources;
+  if (Object.keys(s).every((k) => current.randomness[k])) finish();
+}
+
+async function finish() {
+  if (current.order && current.seed) { renderDone(); return; }
+  clearInterval(ticker); $("cdWrap").hidden = true;
+  current.seed = await seedV2(current.commitment, sourceValues(current.randomness));
+  const rows = await orderV2(current.seed, current.spec.candidates);
+  current.order = rows.map((x) => x.name);
+  persist();
+  renderDone();
+}
+async function renderDone() {
+  clearInterval(ticker); $("cdWrap").hidden = true;
+  const { spec, randomness: r } = current;
+  const rows = spec.v === VERSION ? await orderV2(current.seed, spec.candidates) : await orderV1(current.seed, spec.candidates);
+  setStep("result", "done", "semente " + current.seed.slice(0, 16) + "…");
+  $("resultTitle").textContent = STR.resultTitle(spec.title);
+  $("pendingBox").hidden = true; $("manualBox").hidden = true; $("doneBox").hidden = false;
+  const body = $("orderBody"); body.replaceChildren();
+  rows.forEach((row, i) => {
+    const key = el("td", { className: "key", textContent: row.key.slice(0, 12) + "…", title: row.key });
+    body.append(el("tr", {}, el("td", { className: "pos", textContent: String(i + 1) }), el("td", { className: "name", textContent: row.name }), key));
+  });
+  const facts = [[STR.factCommit, current.commitment]];
+  if (r.eth) facts.push([STR.factEth, "#" + r.eth.number + " · " + r.eth.hash, links.eth(r.eth.number)]);
+  if (r.drand) facts.push([STR.factDrand, "#" + r.drand.round + " · " + r.drand.randomness, links.drand(r.drand.round)]);
+  for (const g of ["megasena", "federal"]) if (r[g]) facts.push([LOTTERY.games[g].label, lotteryValue(g, r[g].contest, r[g]) + (r[g].source === "manual" ? " · inserido manualmente" : ""), links.lottery(g)]);
+  facts.push([STR.factSeed, current.seed]);
+  kv($("resultFacts"), facts);
+  $("ataText").textContent = ataText(certificateOf(current));
+  if (!reduceMotion()) $("resultPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+const certText = () => JSON.stringify(certificateOf(current), null, 2);
+$("copySeal").addEventListener("click", () => copyText(current.commitment, $("copyNote")));
+$("copySpec").addEventListener("click", () => copyText(JSON.stringify({ spec: current.spec, commitment: current.commitment, sealedAt: current.sealedAt }, null, 2), $("copyNote")));
+$("copyCert").addEventListener("click", () => copyText(certText(), $("copyNote2")));
+$("copyAta").addEventListener("click", () => copyText(ataText(certificateOf(current)), $("copyNote2")));
+$("dlCert").addEventListener("click", () => download(certFileName(current.spec.id), certText()));
+$("newDraw").addEventListener("click", resetDraw);
+function resetDraw() {
+  current = null; LS.del("current"); clearInterval(ticker);
+  lockForm(false);
+  for (const id of ["sealPanel", "resultPanel", "cdWrap", "doneBox", "pendingBox", "manualBox"]) $(id).hidden = true;
+  showMsg($("runErr"), ""); showMsg($("sealErr"), ""); $("drawId").value = ""; $("copyFallback").hidden = true;
+  renderTimeline(); renderSaved(); refreshLottery(true); $("drawId").focus();
+}
+function openDraw(state) {
+  if (!state || !state.spec || !state.spec.sources) return;
+  current = state; current.meta = current.meta || {}; current.anchors = current.anchors || []; current.randomness = current.randomness || {};
+  LS.set("current", state.spec.id);
+  for (const id of ["doneBox", "pendingBox", "manualBox"]) $(id).hidden = true;
+  $("title").value = state.spec.title; $("drawId").value = state.spec.id;
+  $("cands").value = state.spec.candidates.join("\n"); $("contrib").value = state.spec.contribution || "";
+  document.querySelector('input[name="mode"][value="' + (state.spec.mode === "scheduled" ? "scheduled" : "live") + '"]').checked = true;
+  renderPresets(state.meta.preset);
+  const g = presetGame(state.meta.preset);
+  if (g) { $("contest").value = state.spec.sources[g].contest; if (state.meta.lotteryDrawMs) $("drawDate").value = new Date(state.meta.lotteryDrawMs + tzMs).toISOString().slice(0, 10); }
+  refreshCount(); lockForm(true); renderTimeline(); showSeal(); renderSaved();
+  if (state.order && state.seed) { finish(); return; }
+  const ots = current.anchors.find((x) => x.type === "ots"); if (ots && !ots.complete) upgradeOts();
+  waitAndDraw();
+}
+
+// ---- inicialização: exemplo e retomada
+$("title").value = "Vagas de garagem, bloco B";
+$("cands").value = ["Apto 101 · Souza", "Apto 102 · Oliveira", "Apto 201 · Pereira", "Apto 202 · Lima", "Apto 301 · Carvalho", "Apto 302 · Ribeiro"].join("\n");
+renderPresets(); refreshCount(); renderTimeline(); renderSaved();
+{
+  const id = LS.get("current", null), all = draws();
+  if (id && all[id]) openDraw(all[id]);
+}
+
+// ================================================================ Conferir
+$("certFile").addEventListener("change", async (e) => { const f = e.target.files[0]; if (f) $("certIn").value = await f.text(); });
+$("verifyBtn").addEventListener("click", async () => {
+  const list = $("checks"); list.replaceChildren(); showMsg($("verdict"), ""); $("verifyHead").hidden = true; $("vOrderWrap").hidden = true;
+  let cert;
+  try { cert = JSON.parse($("certIn").value); } catch { showMsg($("verdict"), STR.notJson, "bad"); return; }
+  $("verifyBtn").disabled = true; $("verifyBtn").textContent = STR.verifying;
+  try {
+    if (cert && cert.spec && typeof cert.spec.id === "string") { $("verifyHead").hidden = false; $("vDrawId").textContent = cert.spec.id; }
+    const rep = await verifyCertificate(cert, { eth: ethEvidence, drand: getDrand, lottery: getLottery }, { lotteryConfirmed: $("lotteryEye").checked });
+    for (const c of rep.checks) {
+      const body = el("div", { textContent: c.title });
+      if (c.detail) body.append(el("small", { textContent: c.detail }));
+      list.append(el("li", { className: c.status }, el("span", { className: "ic", textContent: STR.statusLabel[c.status] }), body));
+    }
+    showMsg($("verdict"), rep.message, rep.verdict === "confere" ? "ok" : rep.verdict === "nao_confere" ? "bad" : "warn");
+    $("verdict").classList.add("verdict");
+    if (rep.order) {
+      const ol = $("vOrderWrap"); ol.replaceChildren(); ol.hidden = false;
+      ol.setAttribute("aria-label", STR.orderTitle);
+      rep.order.forEach((n) => ol.append(el("li", { textContent: n })));
+    }
+  } finally { $("verifyBtn").disabled = false; $("verifyBtn").textContent = STR.verifyBtn; }
+});
+</script>
+</body>
+</html>
