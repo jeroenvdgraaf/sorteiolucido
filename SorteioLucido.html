@@ -1493,22 +1493,24 @@ function lockForm(locked) {
 
 // ---- estado do sorteio atual
 let current = null; // { spec, commitment, sealedAt, anchors, randomness, seed, order, meta }
-let ticker = null, waiting = false;
+let ticker = null;
+const waitingStates = new WeakSet(); // laços de espera em andamento, um por sorteio
 const draws = () => LS.get("draws", {});
-function persist() {
-  if (!current) return;
-  const all = draws(); all[current.spec.id] = current;
-  const ok = LS.set("draws", all) && LS.set("current", current.spec.id);
+function persist(state = current) {
+  if (!state) return;
+  const all = draws(); all[state.spec.id] = state;
+  const ok = LS.set("draws", all) && (state !== current || LS.set("current", state.spec.id));
   if (!ok) showMsg($("runErr"), STR.errStorage);
   renderSaved();
 }
+const persistState = (state) => persist(state);
 function renderSaved() {
   const all = draws(), ids = Object.keys(all).filter((id) => !current || id !== current.spec.id);
   $("savedWrap").hidden = !ids.length;
   const ul = $("savedList"); ul.replaceChildren();
   for (const id of ids) {
     const b = el("button", { className: "btn quiet", type: "button", textContent: STR.reopen });
-    b.addEventListener("click", () => { if (waiting) return; openDraw(all[id]); });
+    b.addEventListener("click", () => openDraw(draws()[id]));
     ul.append(el("li", {}, el("span", { textContent: id + " · " + (all[id].order ? STR.savedDone : STR.savedPending) }), b));
   }
 }
@@ -1526,7 +1528,8 @@ function renderTimeline() {
     $("tl-" + k).dataset.s = k === "prep" ? "active" : "idle";
   }
 }
-function setStep(k, state, detail) { const li = $("tl-" + k); if (!li) return; li.dataset.s = state; if (detail !== undefined) li.querySelector(".d").textContent = detail; }
+const setStep = (k, st, d) => setStepUI(k, st, d);
+function setStepUI(k, state, detail) { const li = $("tl-" + k); if (!li) return; li.dataset.s = state; if (detail !== undefined) li.querySelector(".d").textContent = detail; }
 
 // ---- Lacrar
 $("sealBtn").addEventListener("click", seal);
@@ -1598,7 +1601,7 @@ async function anchor() {
     const resp = await fetchJson(settings.relay.replace(/\/+$/, "") + "/v1/timestamp", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ hash: C }), timeout: 30000 });
     const { anchors, problems } = anchorsFromRelay(resp, C);
     state.anchors = anchors;
-    if (state === current) persist(); else { const all = draws(); all[state.spec.id] = state; LS.set("draws", all); }
+    persist(state);
     if (state !== current) return;
     const rf = anchors.filter((a) => a.type === "rfc3161");
     if (!rf.length) { renderAnchors(STR.relayFailed(problems.join("; ") || "sem tokens"), "warn"); setStep("anchor", "warn"); return; }
@@ -1663,20 +1666,25 @@ async function waitDrand(round) {
   }
   throw new Error(STR.errDrandFetch(round, last ? last.message : "tempo esgotado"));
 }
-async function pollLottery(game, contest, once) {
+async function pollLottery(game, contest, once, state = current) {
   for (;;) {
     let r = null, err = null;
     try { r = await getLottery(game, contest); } catch (e) { err = e; }
     if (r) return { ...r, source: "caixa-api" };
-    if (err || (current.meta.lotteryDrawMs && Date.now() > current.meta.lotteryDrawMs + 6 * 3600 * 1000)) showManual(game, contest, !!err);
+    if (current === state && (err || (state.meta.lotteryDrawMs && Date.now() > state.meta.lotteryDrawMs + 6 * 3600 * 1000))) showManual(game, contest, !!err);
     if (once) return null;
     await sleep(10 * 60 * 1000);
-    if (!current || current.randomness[game] || !(game in current.spec.sources)) return null;
+    if (current !== state || state.randomness[game]) return null;
   }
 }
 async function waitAndDraw() {
-  if (waiting) return; waiting = true;
-  const state = current, s = state.spec.sources, r = state.randomness, jobs = [];
+  const state = current;
+  if (waitingStates.has(state)) return;
+  waitingStates.add(state);
+  const s = state.spec.sources, r = state.randomness, jobs = [];
+  // Um laço antigo (sorteio trocado por outro) continua guardando o resultado, mas não mexe na tela.
+  const setStep = (k, st, d) => { if (current === state) setStepUI(k, st, d); };
+  const persist = () => persistState(state);
   try {
     if (r.eth) setStep("eth", "done", STR.tlEthDone(r.eth.number, r.eth.hash.slice(0, 16)));
     if (r.drand) setStep("drand", "done", STR.tlDrandDone(r.drand.round, r.drand.randomness.slice(0, 16)));
@@ -1695,7 +1703,7 @@ async function waitAndDraw() {
           if (state.meta.lotteryDrawMs && Date.now() < state.meta.lotteryDrawMs) { showPending(g, s[g].contest); while (current === state && Date.now() < state.meta.lotteryDrawMs) await sleep(Math.min(60000, state.meta.lotteryDrawMs - Date.now())); }
           if (current !== state) throw new Error("cancelado");
           showPending(g, s[g].contest);
-          const res = await pollLottery(g, s[g].contest, false);
+          const res = await pollLottery(g, s[g].contest, false, state);
           if (res && !r[g]) { r[g] = { contest: s[g].contest, ...(g === "megasena" ? { numbers: res.numbers } : { prizes: res.prizes }), drawDate: res.drawDate || "", source: "caixa-api" }; }
           if (!r[g]) throw new Error("cancelado");
           persist(); setStep(g, "done", STR.tlLotteryDone(r[g].contest, lotteryValue(g, r[g].contest, r[g]).split(":")[1]));
@@ -1710,7 +1718,7 @@ async function waitAndDraw() {
     for (const k of Object.keys(s)) if (!r[k]) setStep(k, "error");
     showMsg($("runErr"), STR.errWait(e.message));
     return;
-  } finally { waiting = false; }
+  } finally { waitingStates.delete(state); }
   if (current === state) await finish();
 }
 function showPending(game, contest) {

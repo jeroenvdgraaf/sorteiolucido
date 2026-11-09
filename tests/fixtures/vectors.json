@@ -1,0 +1,32 @@
+{
+  "note": "SPEC section 11 test vectors, copied verbatim. Values marked fake in the SPEC are invented.",
+  "vectors": [
+    {
+      "name": "Vector 1: live, eth + drand",
+      "canonical": "{\"candidates\":[\"Apto 101 · Souza\",\"Apto 102 · Oliveira\",\"Apto 201 · Pereira\",\"Apto 202 · Lima\",\"Apto 301 · Carvalho\",\"Apto 302 · Ribeiro\"],\"contribution\":\"4 6 1 3\",\"id\":\"garagem-2027-blocoB\",\"mode\":\"live\",\"sources\":{\"drand\":{\"chain\":\"quicknet\",\"chainHash\":\"52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971\",\"round\":33819214},\"eth\":{\"chain\":\"ethereum-mainnet\",\"confirmations\":1,\"notBefore\":1794260000,\"rule\":\"first-block-after\"}},\"title\":\"Vagas de garagem, bloco B\",\"v\":\"LucentDraw/2\"}",
+      "C": "d6af4d8f3b6126c60afbc36e4f21d987f940e9c53b7ce230c135e026d88518fa",
+      "values": { "eth": "1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f", "drand": "a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7" },
+      "seed": "e6052659239924d144fb683dd4d71292946626dbf6c452b6af1ec72f423a065b",
+      "key": ["Apto 101 · Souza", "f4a0899c86332231cf4cf1da90c8f19c3229f391123addd6ef7a82eeb32d5a38"],
+      "order": ["Apto 201 · Pereira", "Apto 301 · Carvalho", "Apto 202 · Lima", "Apto 102 · Oliveira", "Apto 302 · Ribeiro", "Apto 101 · Souza"]
+    },
+    {
+      "name": "Vector 2: scheduled, Mega-Sena",
+      "canonical": "{\"candidates\":[\"P-0001\",\"P-0002\",\"P-0003\",\"P-0004\",\"P-0005\"],\"contribution\":\"\",\"id\":\"fila-creche-2027-03\",\"mode\":\"scheduled\",\"sources\":{\"megasena\":{\"contest\":3001}},\"title\":\"Fila de creche, março 2027\",\"v\":\"LucentDraw/2\"}",
+      "C": "4c00fc31ab02a166240237f26088b55f94d05c6986868f5c16c76813cd06576c",
+      "values": { "megasena": "3001:04-12-23-35-41-58" },
+      "seed": "a69966fa7ecc95fc8c0ad94187568a061dfd6809ec9f4ff1851e54cc0f7413be",
+      "key": ["P-0001", "d801509502752e603e2e6f0ca934532fbec03cf998b3297949322a02b723d53d"],
+      "order": ["P-0002", "P-0005", "P-0001", "P-0003", "P-0004"]
+    },
+    {
+      "name": "Vector 3: scheduled, Loteria Federal + drand",
+      "canonical": "{\"candidates\":[\"Ana\",\"Bruno\",\"Célia\"],\"contribution\":\"\",\"id\":\"sorteio-federal-teste\",\"mode\":\"scheduled\",\"sources\":{\"drand\":{\"chain\":\"quicknet\",\"chainHash\":\"52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971\",\"round\":33900000},\"federal\":{\"contest\":5900}},\"title\":\"Teste Loteria Federal\",\"v\":\"LucentDraw/2\"}",
+      "C": "5a02f062f672c1834288773aece0dd6c8fdd0de5493f1b213f4976f4f636d0a8",
+      "values": { "federal": "5900:01234-56789-13579-24680-97531", "drand": "0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c" },
+      "seed": "1fb0af54c3e3969e706823b2f5dac496e7bd8d9a8960ac6f98e29a8ddf903c24",
+      "key": ["Ana", "0425c05ec105ff7ffbb12ea4b1d59cafe3bcaaa6fab6309a7d333e524ca51658"],
+      "order": ["Ana", "Bruno", "Célia"]
+    }
+  ]
+}

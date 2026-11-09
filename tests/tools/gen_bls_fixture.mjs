@@ -10,7 +10,7 @@ const DST = "BLS_SIG_BLS12381G1_XMD:SHA-256_SSWU_RO_NUL_";
 const sk = BigInt("0x" + createHash("sha256").update("SorteioLucido test key, never a real drand key").digest("hex")) % bls.params.r;
 const pk = bls.G2.ProjectivePoint.BASE.multiply(sk);
 const hex = b => Buffer.from(b).toString("hex");
-const rounds = [33819214, 33819226, 33900000, 40000000, 40000012, 40480000, 40480010];
+const rounds = [33819214, 33900000, 33700000, 32398891, 40000000];
 const beacons = rounds.map(round => {
   const buf = Buffer.alloc(8); buf.writeBigUInt64BE(BigInt(round));
   const msg = createHash("sha256").update(buf).digest();

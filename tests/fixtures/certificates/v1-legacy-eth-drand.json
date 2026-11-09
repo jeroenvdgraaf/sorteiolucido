@@ -1,0 +1,52 @@
+{
+  "spec": {
+    "v": "LucentDraw/1",
+    "id": "garage-2026-blockB",
+    "title": "Garage spaces, block B",
+    "candidates": [
+      "Apt 101 · Souza",
+      "Apt 102 · Oliveira",
+      "Apt 201 · Pereira",
+      "Apt 202 · Lima"
+    ],
+    "contribution": "4 6 1 3",
+    "sources": {
+      "eth": {
+        "chain": "ethereum-mainnet",
+        "rule": "first block with timestamp > notBefore",
+        "notBefore": 1790000000,
+        "confirmations": 1,
+        "value": "block hash"
+      },
+      "drand": {
+        "chain": "quicknet",
+        "chainHash": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+        "round": 32398891
+      }
+    }
+  },
+  "commitment": "b2657b19cae1a74a8350819e5170223461d4911171e7ae4584029c3fd8a80506",
+  "sealedAt": "2026-09-21T13:33:20.000Z",
+  "randomness": {
+    "drand": {
+      "round": 32398891,
+      "randomness": "75ab4748fb3ce1e91772e8307e2b02c93e19115df5314c04d64b8bcab95b2e2e",
+      "signature": "93b955f025e428817f11ce57e9103fc8e265d9eeec061dfe262aa1d78a85a0951532ca9fc98e2de2ba40bd3401daa94a"
+    },
+    "eth": {
+      "number": 23000000,
+      "hash": "2d5b666ac59e10a23e165b9d6e0b5efc2771789b2f67404d0ccd821e09277eb0",
+      "timestamp": 1790000003,
+      "parentTimestamp": 1789999991,
+      "confirmations": 1
+    }
+  },
+  "seed": "757ecdd4e689f711bcf49501b1c14b148978cc8cfd2b40a82a5cf6df3ed84d81",
+  "order": [
+    "Apt 101 · Souza",
+    "Apt 202 · Lima",
+    "Apt 102 · Oliveira",
+    "Apt 201 · Pereira"
+  ],
+  "v": "LucentDraw/1"
+}

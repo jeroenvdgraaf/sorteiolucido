@@ -8,34 +8,24 @@
       "signature": "ae284d54571a866398ff26de8c97e172e2729abf81347abfe0b877afa969b9c47145ae1725cbcc850af74b60d66e148a"
     },
     {
-      "round": 33819226,
-      "randomness": "7c45bd89ecb61cb155cb31493e496a771cb20b1c5ace9394c6128a8f31fe4553",
-      "signature": "8d7c64128eaced6cae4c24a3f7aa591547b768c1b281f5e24c134655032c9fae2c2875eb8f15bb51d4ae59c714c72e29"
-    },
-    {
       "round": 33900000,
       "randomness": "6c8a5ea4ab79babe62ba04878525b3e165e9955854ce0190dfe26b69c20809ad",
       "signature": "aaafb1583caad0e0a198c98f2196ea0d68a8b46f7b9c852f8427e4c97a7719b2e9c5e51c856ade5cc003fef61c406c13"
     },
     {
+      "round": 33700000,
+      "randomness": "9bf3572b3eaf5231ece200d964262ba8ef76c425b4ba7c4ec1f8d180f286657d",
+      "signature": "b656b5358f938c5898e6c3b261fd94160fc8de9e1782f0e123d923e32dd4f26777df0b10b36b126ec19a5540373b488a"
+    },
+    {
+      "round": 32398891,
+      "randomness": "75ab4748fb3ce1e91772e8307e2b02c93e19115df5314c04d64b8bcab95b2e2e",
+      "signature": "93b955f025e428817f11ce57e9103fc8e265d9eeec061dfe262aa1d78a85a0951532ca9fc98e2de2ba40bd3401daa94a"
+    },
+    {
       "round": 40000000,
       "randomness": "5a06cfdfcad75170da5e4cc06374ea632c6d73d5081d1a95b40028efb8c004f7",
       "signature": "b6ecbbafa3521e6cd3b1119801756d110d8cbccc728f794bc774c39e566cf8dd292fea5c4db8ed720e81ba80a277c929"
-    },
-    {
-      "round": 40000012,
-      "randomness": "ee65cded75d8305c19c492e7d227e1809df33db1a1e3e0ed0bcf2377860c522f",
-      "signature": "aa57390b93ae53cced0ddc3bf8eb0d6a179af811b27d7efe57daeeb7efba462f31669b2ad276bb3cfa4378effee4cdb8"
-    },
-    {
-      "round": 40480000,
-      "randomness": "dc7078908a5d32883077f1dfbce8a2ac99879dbec240371f83bb619836eb12aa",
-      "signature": "95a744ae6d7406ab879b073021f6f64a9eb28699fcc5c5932f4fee0ebe3956392dda73af0d5354ac38b22002c5400927"
-    },
-    {
-      "round": 40480010,
-      "randomness": "fed4f20d450be7bdaf9808abc2edd3e85d45a2c46fe73dbeab7e182baee32ea5",
-      "signature": "852dc797f4bf1dddf969b586878fced5b60ceec8408e7e0cbbd4cf89197166d762d56db74112862167a1da9d0716f1c1"
     }
   ]
 }

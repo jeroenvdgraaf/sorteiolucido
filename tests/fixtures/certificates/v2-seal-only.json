@@ -1,0 +1,25 @@
+{
+  "spec": {
+    "v": "LucentDraw/2",
+    "id": "so-lacre",
+    "title": "",
+    "mode": "live",
+    "candidates": [
+      "X",
+      "Y"
+    ],
+    "contribution": "",
+    "sources": {
+      "eth": {
+        "chain": "ethereum-mainnet",
+        "rule": "first-block-after",
+        "notBefore": 1794260000,
+        "confirmations": 1
+      }
+    }
+  },
+  "commitment": "eab8e5b849e16cd8eb265a7d1d05bb62aadf1d7b08f3bf2ce8bc90073d927cdd",
+  "sealedAt": "2026-11-09T21:33:20.000Z",
+  "anchors": [],
+  "randomness": {}
+}

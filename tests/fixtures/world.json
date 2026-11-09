@@ -1,0 +1,83 @@
+{
+  "note": "Simulated network state for offline tests. All values are FAKE; drand beacons use a TEST key.",
+  "drandPublicKey": "81203162b82fd1c0ce9687986a4dc858d6ffe70a5e523d03236a8353ae64e7f9cf68487410be5a8928254408fdd485d409b611118601708fa7ef7ecb2d08721ecf32b4af4064c023750476e72520d43050eb3263554d3e623da1f6aae9705dcd",
+  "eth": {
+    "head": 23700060,
+    "blocks": {
+      "22999999": {
+        "number": 22999999,
+        "hash": "212973e9944ded6d5620b632601b7e5e17692c17ebcf3468e907d2ecfac0af02",
+        "timestamp": 1789999991
+      },
+      "23000000": {
+        "number": 23000000,
+        "hash": "2d5b666ac59e10a23e165b9d6e0b5efc2771789b2f67404d0ccd821e09277eb0",
+        "timestamp": 1790000003
+      },
+      "23699999": {
+        "number": 23699999,
+        "hash": "83b04a55a9308285323b9f097786290136dbdcde3690dbe8b1867f4a1364b074",
+        "timestamp": 1794259991
+      },
+      "23700000": {
+        "number": 23700000,
+        "hash": "a5f3d7f4fe85ddd56724cb63a6818cc2aabc4c404fe30d718fc965058605597c",
+        "timestamp": 1794260015
+      }
+    }
+  },
+  "drand": {
+    "32398891": {
+      "round": 32398891,
+      "randomness": "75ab4748fb3ce1e91772e8307e2b02c93e19115df5314c04d64b8bcab95b2e2e",
+      "signature": "93b955f025e428817f11ce57e9103fc8e265d9eeec061dfe262aa1d78a85a0951532ca9fc98e2de2ba40bd3401daa94a"
+    },
+    "33700000": {
+      "round": 33700000,
+      "randomness": "9bf3572b3eaf5231ece200d964262ba8ef76c425b4ba7c4ec1f8d180f286657d",
+      "signature": "b656b5358f938c5898e6c3b261fd94160fc8de9e1782f0e123d923e32dd4f26777df0b10b36b126ec19a5540373b488a"
+    },
+    "33819214": {
+      "round": 33819214,
+      "randomness": "87b020d5f3fd8e4e06f6845b7643228a4f6e19c346ba393ab94a6531c87eecd8",
+      "signature": "ae284d54571a866398ff26de8c97e172e2729abf81347abfe0b877afa969b9c47145ae1725cbcc850af74b60d66e148a"
+    },
+    "33900000": {
+      "round": 33900000,
+      "randomness": "6c8a5ea4ab79babe62ba04878525b3e165e9955854ce0190dfe26b69c20809ad",
+      "signature": "aaafb1583caad0e0a198c98f2196ea0d68a8b46f7b9c852f8427e4c97a7719b2e9c5e51c856ade5cc003fef61c406c13"
+    },
+    "40000000": {
+      "round": 40000000,
+      "randomness": "5a06cfdfcad75170da5e4cc06374ea632c6d73d5081d1a95b40028efb8c004f7",
+      "signature": "b6ecbbafa3521e6cd3b1119801756d110d8cbccc728f794bc774c39e566cf8dd292fea5c4db8ed720e81ba80a277c929"
+    }
+  },
+  "lottery": {
+    "megasena/3001": {
+      "game": "megasena",
+      "contest": 3001,
+      "numbers": [
+        4,
+        12,
+        23,
+        35,
+        41,
+        58
+      ],
+      "drawDate": "2027-03-02"
+    },
+    "federal/5900": {
+      "game": "federal",
+      "contest": 5900,
+      "prizes": [
+        "01234",
+        "56789",
+        "13579",
+        "24680",
+        "97531"
+      ],
+      "drawDate": "2026-11-11"
+    }
+  }
+}
