@@ -1083,6 +1083,9 @@ def verify_certificate(cert, fetched=None, *, drand_pubkey: str = QUICKNET_PUBKE
 
     sources = spec.get("sources") if isinstance(spec.get("sources"), dict) else {}
     rand = cert.get("randomness") if isinstance(cert.get("randomness"), dict) else {}
+    # Um lacre (SPEC 3.3): sem aleatoriedade, sem semente e sem ordem. Fontes ficam pendentes, não falham.
+    is_seal = not rand and "seed" not in cert and "order" not in cert
+    missing = UNVERIFIED if is_seal else FAIL
     indep = {}   # valores obtidos de forma independente
     claimed = {}  # valores segundo o certificado
     rtimes = {}  # momento em que cada aleatoriedade passou a existir (unix s)
@@ -1098,7 +1101,8 @@ def verify_certificate(cert, fetched=None, *, drand_pubkey: str = QUICKNET_PUBKE
         if nb is not None:
             rtimes["eth"] = nb + 1
         if not ev or not _is_int(ev.get("number")):
-            add("eth", FAIL, "O certificado não indica o bloco Ethereum usado.")
+            add("eth", missing, "Lacre: o bloco Ethereum ainda não foi registrado." if is_seal
+                else "O certificado não indica o bloco Ethereum usado.")
         elif "error" in f or "block" not in f:
             add("eth", UNVERIFIED, f"Bloco Ethereum #{ev['number']} não pôde ser consultado.",
                 f.get("error", "não consultado"))
@@ -1144,7 +1148,8 @@ def verify_certificate(cert, fetched=None, *, drand_pubkey: str = QUICKNET_PUBKE
             rtimes["drand"] = drand_round_time(rnd)
         f = fetched.get("drand") or {}
         if not ev:
-            add("drand", FAIL, f"O certificado não traz a rodada drand #{rnd}.")
+            add("drand", missing, f"Lacre: a rodada drand #{rnd} ainda não foi registrada." if is_seal
+                else f"O certificado não traz a rodada drand #{rnd}.")
         elif "error" in f or "signature" not in f:
             add("drand", UNVERIFIED, f"Rodada drand #{rnd} não pôde ser consultada.", f.get("error", "não consultada"))
         else:
@@ -1185,7 +1190,8 @@ def verify_certificate(cert, fetched=None, *, drand_pubkey: str = QUICKNET_PUBKE
         manual = " (resultado inserido manualmente)" if ev and ev.get("source") == "manual" else ""
         f = fetched.get(game, {"error": "não consultado"})
         if not ok_ev:
-            add(game, FAIL, f"{label}: o certificado não traz um resultado válido do concurso {contest}.")
+            add(game, missing, f"Lacre: o resultado do concurso {contest} ({label}) ainda não foi registrado." if is_seal
+                else f"{label}: o certificado não traz um resultado válido do concurso {contest}.")
             continue
         if isinstance(f, dict) and "error" not in f:
             off = lottery_value(game, contest, f)
@@ -1459,7 +1465,11 @@ def main(argv=None):
     ap.add_argument("--json", action="store_true", help="saída em JSON")
     a = ap.parse_args(argv)
     try:
-        raw = sys.stdin.read() if a.certificate == "-" else open(a.certificate, encoding="utf-8").read()
+        if a.certificate == "-":
+            raw = sys.stdin.read()
+        else:
+            with open(a.certificate, encoding="utf-8") as f:
+                raw = f.read()
         cert = json.loads(raw)
     except (OSError, ValueError) as e:
         print(f"Não foi possível ler o certificado: {e}", file=sys.stderr)
