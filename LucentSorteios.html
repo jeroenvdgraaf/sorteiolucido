@@ -453,6 +453,7 @@ const STR = {
   tlLotteryWait: (c, d) => "Aguardando o concurso " + c + " (" + d + ")",
   tlLotteryDone: (c, v) => "Concurso " + c + " · " + v,
   tlRetrying: "Sem resposta; tentando de novo",
+  tlRetryingWhy: (why) => "Sem resposta; tentando de novo. Motivo: " + why + ". Se a página foi aberta numa pré-visualização (por exemplo dentro de um aplicativo), baixe o arquivo e abra no Chrome, Edge ou Firefox.",
   savedTitle: "Lacres guardados neste navegador", reopen: "Reabrir",
   savedPending: "aguardando", savedDone: "concluído",
   resultTitle: (t) => t ? "Resultado · " + t : "Resultado",
@@ -1658,13 +1659,19 @@ function startCountdown() {
 }
 
 // ---- espera pelas fontes
+// Motivo legível de uma falha de rede, incluindo a causa de "nenhum servidor respondeu".
+function errWhy(e) {
+  const c = e && e.cause ? e.cause : e;
+  const m = (c && c.message) || String(c || "desconhecido");
+  return /failed to fetch|networkerror|load failed|import/i.test(m) ? "a página não conseguiu acessar a internet (" + m + ")" : m;
+}
 async function waitDrand(round) {
   const due = drandRoundTime(round);
   while (Date.now() < due + 300) await sleep(Math.min(30000, due + 300 - Date.now()));
   let last;
   for (let i = 0; i < 120; i++) {
     try { return await getDrand(round); }
-    catch (e) { last = e; if (/assinatura|rodada|valid/i.test(e.message)) throw e; setStep("drand", "active", STR.tlRetrying); await sleep(1500); }
+    catch (e) { last = e; if (/assinatura|rodada|valid/i.test(e.message)) throw e; setStep("drand", "active", STR.tlRetryingWhy(errWhy(e))); await sleep(1500); }
   }
   throw new Error(STR.errDrandFetch(round, last ? last.message : "tempo esgotado"));
 }
@@ -1696,7 +1703,7 @@ async function waitAndDraw() {
       sleep, onStatus: (st) => {
         if (st.state === "pending") setStep("eth", "active", STR.tlWaitingSlot(st.head));
         else if (st.state === "confirming") setStep("eth", "active", STR.tlConfirming(st.number, s.eth.confirmations));
-        else if (st.state === "error") setStep("eth", "active", STR.tlRetrying);
+        else if (st.state === "error") setStep("eth", "active", STR.tlRetryingWhy(errWhy(st.error)));
       },
     }).then((b) => { r.eth = b; persist(); setStep("eth", "done", STR.tlEthDone(b.number, b.hash.slice(0, 16))); }));
     for (const g of ["megasena", "federal"]) {
