@@ -381,12 +381,12 @@ footer { color: var(--muted); font-size: 12.5px; }
 // ---- Tabela de textos (pt-BR). Para outra língua, troque só esta tabela.
 const STR = {
   family: "LucentCrypto · sorteios verificáveis",
-  tagline: "Um sorteio que qualquer pessoa pode conferir. Primeiro a lista é lacrada; depois chega um valor aleatório público que ninguém controla; a ordem sai de uma regra publicada.",
+  tagline: "Um sorteio que qualquer pessoa pode conferir. Primeiro a lista é lacrada; depois chega um valor aleatório público que ninguém controla; a ordem é calculada a partir dele, seguindo uma regra publicada.",
   tabsAria: "Seções", tabRun: "Sortear", tabVerify: "Conferir",
   themeAuto: "Tema: automático", themeLight: "Tema: claro", themeDark: "Tema: escuro",
   step1: "Preparar", step2: "Lacrar: divulgue o lacre agora", step3: "Resultado",
   modeAria: "Tipo de sorteio", modeLive: "Ao vivo", modeScheduled: "Agendado",
-  fTitle: "Título", fDrawId: "ID do sorteio", fDrawIdHint: "único; anuncie com antecedência",
+  fTitle: "Título", fDrawId: "ID do sorteio", fDrawIdHint: "sugerido automaticamente; troque se quiser anunciá-lo antes",
   fCands: "Participantes, um por linha",
   fSource: "Fonte de aleatoriedade",
   fContest: "Concurso", fDrawDate: "Data prevista do sorteio",
@@ -411,7 +411,6 @@ const STR = {
   },
   candCount: (n) => n + (n === 1 ? " participante" : " participantes"),
   dupNames: (list) => "Cada nome precisa ser único. Repetidos: " + list,
-  errNoId: "Dê um ID ao sorteio antes de lacrar. Anuncie o ID com antecedência, para que ninguém possa repetir o mesmo sorteio.",
   errFewNames: "Inclua pelo menos dois participantes.",
   errDups: "Há nomes repetidos. Corrija a lista antes de lacrar.",
   errIdUsed: (id) => "O ID \"" + id + "\" já foi lacrado neste navegador. Um segundo lacre com o mesmo ID invalidaria o sorteio. Use \"Novo sorteio com outro ID\".",
@@ -1535,12 +1534,13 @@ function setStepUI(k, state, detail) { const li = $("tl-" + k); if (!li) return;
 
 // ---- Lacrar
 $("sealBtn").addEventListener("click", seal);
-$("otherIdBtn").addEventListener("click", () => { $("drawId").value = ""; $("otherIdBtn").hidden = true; showMsg($("sealErr"), ""); $("drawId").focus(); });
+$("otherIdBtn").addEventListener("click", () => { $("drawId").value = suggestId(); $("otherIdBtn").hidden = true; showMsg($("sealErr"), ""); $("drawId").focus(); });
 async function seal() {
   showMsg($("sealErr"), ""); showMsg($("runErr"), ""); $("otherIdBtn").hidden = true;
   const { names, dups } = parseNames($("cands").value);
+  if (!normText($("title").value)) $("title").value = suggestTitle();
+  if (!normText($("drawId").value)) $("drawId").value = suggestId();
   const id = normText($("drawId").value), p = preset(), g = presetGame(p);
-  if (!id) return showMsg($("sealErr"), STR.errNoId);
   if (names.length < 2) return showMsg($("sealErr"), STR.errFewNames);
   if (dups.length) return showMsg($("sealErr"), STR.errDups);
   if (LS.get("sealedIds", []).includes(id) || id in draws()) { $("otherIdBtn").hidden = false; return showMsg($("sealErr"), STR.errIdUsed(id)); }
@@ -1805,7 +1805,7 @@ function resetDraw() {
   lockForm(false);
   for (const id of ["sealPanel", "resultPanel", "cdWrap", "doneBox", "pendingBox", "manualBox"]) $(id).hidden = true;
   showMsg($("runErr"), ""); showMsg($("sealErr"), ""); $("drawId").value = ""; $("copyFallback").hidden = true;
-  renderTimeline(); renderSaved(); refreshLottery(true); $("drawId").focus();
+  renderTimeline(); renderSaved(); refreshLottery(true); refreshSuggestions(); $("title").focus();
 }
 function openDraw(state) {
   if (!state || !state.spec || !state.spec.sources) return;
@@ -1824,10 +1824,27 @@ function openDraw(state) {
   waitAndDraw();
 }
 
+// ---- sugestões de título e ID: preenchidas, editáveis, e repostas ao lacrar se ficarem em branco
+const pad2 = (n) => String(n).padStart(2, "0");
+function suggestTitle(d = new Date()) {
+  return "Sorteio de " + pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear() + ", " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+}
+function suggestId(d = new Date()) {
+  const base = "sorteio-" + d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + "-" + pad2(d.getHours()) + pad2(d.getMinutes());
+  const used = new Set([...LS.get("sealedIds", []), ...Object.keys(draws())]);
+  let id = base, n = 2;
+  while (used.has(id)) id = base + "-" + n++;
+  return id;
+}
+function refreshSuggestions() {
+  $("title").placeholder = suggestTitle();
+  if (!$("drawId").disabled && !normText($("drawId").value)) $("drawId").value = suggestId();
+}
+
 // ---- inicialização: exemplo e retomada
 $("title").value = "Vagas de garagem, bloco B";
 $("cands").value = ["Apto 101 · Souza", "Apto 102 · Oliveira", "Apto 201 · Pereira", "Apto 202 · Lima", "Apto 301 · Carvalho", "Apto 302 · Ribeiro"].join("\n");
-renderPresets(); refreshCount(); renderTimeline(); renderSaved();
+renderPresets(); refreshCount(); renderTimeline(); renderSaved(); refreshSuggestions();
 {
   const id = LS.get("current", null), all = draws();
   if (id && all[id]) openDraw(all[id]);
