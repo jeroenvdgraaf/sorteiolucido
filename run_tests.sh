@@ -5,7 +5,7 @@
 # e verificador de referência (Python).
 set -e
 cd "$(dirname "$0")"
-echo "== Node: núcleo do SorteioLucido.html, relay =="
+echo "== Node: núcleo do LucentSorteios.html, relay =="
 node --test tests/*.test.mjs
 echo
 echo "== Python: verifier/verify_draw.py =="

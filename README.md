@@ -1,4 +1,4 @@
-# SorteioLúcido
+# Lucent Sorteios
 
 Sorteios que qualquer pessoa pode conferir sem confiar em quem os organiza (protocolo
 **LucentDraw/2**, família LucentCrypto). A lista de participantes é lacrada (hash SHA-256) antes de
@@ -10,7 +10,7 @@ completa está em [`spec/SPEC.md`](spec/SPEC.md); as decisões de implementaçã
 
 | Arquivo | O que é |
 |---|---|
-| `SorteioLucido.html` | O aplicativo: um único arquivo, abas **Sortear** e **Conferir**. |
+| `LucentSorteios.html` | O aplicativo: um único arquivo, abas **Sortear** e **Conferir**. |
 | `verifier/verify_draw.py` | Verificador de referência em Python (segunda implementação, independente). |
 | `relay/` | Relay de carimbo de tempo (Cloudflare Worker), opcional. |
 | `tests/` | Testes automáticos, todos sem rede. |
@@ -18,7 +18,7 @@ completa está em [`spec/SPEC.md`](spec/SPEC.md); as decisões de implementaçã
 
 ## Usar o HTML
 
-Abra `SorteioLucido.html` num navegador atual (Chrome, Edge, Firefox ou Safari, também no celular),
+Abra `LucentSorteios.html` num navegador atual (Chrome, Edge, Firefox ou Safari, também no celular),
 direto do disco ou de qualquer servidor estático. Não há instalação nem cadastro.
 
 1. **Preparar:** escolha *Ao vivo* ou *Agendado*, preencha título, ID do sorteio (anunciado antes) e
@@ -80,7 +80,7 @@ núcleo do protocolo extraído do próprio HTML (marcadores `CORE-BEGIN`/`CORE-E
 Copyright (C) 2026 Jeroen van de Graaf.
 
 - **Especificação e verificador** ([`spec/`](spec/) e [`verifier/`](verifier/)): [Apache-2.0](spec/LICENSE). Qualquer pessoa pode usar, adaptar e reimplementar a conferência, inclusive em produtos fechados.
-- **Todo o resto** (a página `SorteioLucido.html`, o relay, os testes): [GNU AGPL-3.0](LICENSE). Quem oferecer uma versão modificada como serviço on-line precisa publicar o código-fonte dessas modificações.
+- **Todo o resto** (a página `LucentSorteios.html`, o relay, os testes): [GNU AGPL-3.0](LICENSE). Quem oferecer uma versão modificada como serviço on-line precisa publicar o código-fonte dessas modificações.
 - **Licença comercial:** para usar a aplicação sem as obrigações da AGPL, entre em contato com o autor.
 - Cada arquivo indica sua licença na linha `SPDX-License-Identifier`. A cópia do `drand-client` em `tests/vendor/` mantém a sua própria licença (Apache-2.0 ou MIT).
 - **Contribuições externas** só são aceitas com um acordo de contribuição (CLA) que preserve a possibilidade de licenciamento comercial.

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Jeroen van de Graaf
-// SorteioLúcido · relay de carimbo de tempo (SPEC 6.2), Cloudflare Worker.
+// Lucent Sorteios · relay de carimbo de tempo (SPEC 6.2), Cloudflare Worker.
 // Só repassa pedidos: nunca recebe a lista de participantes, só o hash (lacre). Sem estado além dos logs.
 //
 //   POST /v1/timestamp        { "hash": "<64 hex>" } -> { rfc3161: [{tsa, token}], ots, errors? }
@@ -130,7 +130,7 @@ export async function handle(req, env = {}, fetchFn = fetch) {
     if (req.method === "POST" && url.pathname === "/v1/ots/upgrade") return await upgradeHandler(req, cfg, f);
     const m = /^\/v1\/lottery\/(megasena|federal)\/([^/]+)$/.exec(url.pathname);
     if (req.method === "GET" && m) return await lotteryHandler(req, cfg, f, m[1], m[2]);
-    if (req.method === "GET" && url.pathname === "/") return json(req, cfg, 200, { service: "SorteioLúcido timestamp relay", endpoints: ["POST /v1/timestamp", "POST /v1/ots/upgrade", "GET /v1/lottery/<megasena|federal>/<contest>"] });
+    if (req.method === "GET" && url.pathname === "/") return json(req, cfg, 200, { service: "Lucent Sorteios timestamp relay", endpoints: ["POST /v1/timestamp", "POST /v1/ots/upgrade", "GET /v1/lottery/<megasena|federal>/<contest>"] });
     return json(req, cfg, 404, { error: "not found" });
   } catch (e) {
     return json(req, cfg, e.status || 500, { error: e.status ? e.message : "internal error" });

@@ -57,13 +57,13 @@ test("UI: prepare, seal without relay, one seal per ID, no HTML injection", { sk
 test("UI: scheduled draw reopened after the contest, Caixa blocked, manual entry verifies", { skip: !JSDOM && "jsdom não instalado" }, async () => {
   const spec = { v: "LucentDraw/2", id: "fila-federal-x", title: "Fila", mode: "scheduled", candidates: ["Ana", "Bruno", "Célia", "Davi"], contribution: "", sources: { federal: { contest: 5900 } } };
   const state = { spec, commitment: await C.commitmentOf(spec), sealedAt: "2026-11-09T12:00:00.000Z", anchors: [], randomness: {}, meta: { preset: "federal", lotteryDrawMs: Date.now() - 3600e3 } };
-  const { w, $, errors } = boot({ "sorteiolucido.draws": JSON.stringify({ [spec.id]: state }), "sorteiolucido.current": JSON.stringify(spec.id) });
+  const { w, $, errors } = boot({ "lucentsorteios.draws": JSON.stringify({ [spec.id]: state }), "lucentsorteios.current": JSON.stringify(spec.id) });
   await tick(300);
   assert.ok($("cands").disabled, "retomado e travado");
   assert.equal($("manualBox").hidden, false);
   $("manualNums").value = "1234 56789 13579 24680 97531"; $("manualDate").value = "2026-11-09"; $("manualConfirm").checked = true;
   $("manualSave").click(); await tick(200);
-  const saved = JSON.parse(w.localStorage.getItem("sorteiolucido.draws"))[spec.id];
+  const saved = JSON.parse(w.localStorage.getItem("lucentsorteios.draws"))[spec.id];
   assert.equal(saved.randomness.federal.source, "manual");
   assert.match($("ataText").textContent, /inserido manualmente/);
   const rep = await C.verifyCertificate(C.certificateOf(saved), { lottery: async () => { throw new Error("bloqueada"); } }, { lotteryConfirmed: true });

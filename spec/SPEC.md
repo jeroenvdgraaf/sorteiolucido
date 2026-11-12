@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- Copyright (C) 2026 Jeroen van de Graaf -->
-# SorteioLúcido — implementation spec
+# Lucent Sorteios — implementation spec
 
-Protocol: **LucentDraw/2**. Product: **SorteioLúcido** (Brazilian Portuguese UI), part of the LucentCrypto family. The English prototype `LucentDraw.html` (protocol LucentDraw/1) exists and is the starting point.
+Protocol: **LucentDraw/2**. Product: **Lucent Sorteios** (Brazilian Portuguese UI), part of the LucentCrypto family. The English prototype `LucentDraw.html` (protocol LucentDraw/1) exists and is the starting point.
 
 This document is written as input for an implementer, human or AI. Where it says MUST, the behavior is part of the protocol and affects verification; everything else is product guidance. When in doubt, ask instead of guessing: a different hash input means certificates that no longer verify.
 
@@ -10,7 +10,7 @@ This document is written as input for an implementer, human or AI. Where it says
 
 ## 1. What the product does
 
-SorteioLúcido runs random draws that anyone can check afterwards without trusting the operator.
+Lucent Sorteios runs random draws that anyone can check afterwards without trusting the operator.
 
 1. **Prepare:** the operator enters a title, a draw ID and a list of participants, and picks a randomness source.
 2. **Seal:** the app freezes everything into a JSON object (`spec`), hashes it into the **commitment**, and timestamps that commitment with independent services. The form locks.
@@ -31,7 +31,7 @@ Listed in section 12 so they are not built by accident.
 
 ## 2. Deliverable
 
-- **One self-contained HTML file** (`SorteioLucido.html`) that runs locally in current Chrome, Edge, Firefox and Safari, on desktop and phone. No build step required to use it.
+- **One self-contained HTML file** (`LucentSorteios.html`) that runs locally in current Chrome, Edge, Firefox and Safari, on desktop and phone. No build step required to use it.
 - **Plus one small optional server component**, the *timestamp relay* (section 6), because timestamp servers do not accept requests from a browser page. The HTML must work without the relay; it then skips timestamping and says so.
 - **A reference verifier in Python** (`verify_draw.py`, standard library only, plus `requests` for fetching) implementing section 9. It is the second, independent implementation; the HTML and the Python verifier must agree on the test vectors in section 11.
 
@@ -229,7 +229,7 @@ The relay only forwards; it never sees the participant list. Its URL is a settin
 - **Outputs:** download the certificate as `certificado-sorteio-<id>.json`; copy it; show the **ata do sorteio** (section 7.3) as text with a copy button.
 
 ### 7.3 Ata do sorteio
-Plain text in Portuguese, generated from the certificate: title, draw ID, date and time of sealing, number of participants, sources and their values with official links, the commitment, the anchors (provider and time), the resulting order, and a closing paragraph: how anyone can verify (open SorteioLúcido, tab Conferir, load the certificate; or run `verify_draw.py`). No claim the software has not checked.
+Plain text in Portuguese, generated from the certificate: title, draw ID, date and time of sealing, number of participants, sources and their values with official links, the commitment, the anchors (provider and time), the resulting order, and a closing paragraph: how anyone can verify (open Lucent Sorteios, tab Conferir, load the certificate; or run `verify_draw.py`). No claim the software has not checked.
 
 ### 7.4 Conferir (verify) tab
 Load a certificate (paste or file). Show a list of checks, each **passou / falhou / não verificado / atenção**, then a one-line verdict. Checks are listed in section 9.

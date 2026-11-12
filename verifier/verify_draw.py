@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 Jeroen van de Graaf
-"""verify_draw.py: verificador de referência do SorteioLúcido (protocolo LucentDraw/2).
+"""verify_draw.py: verificador de referência do Lucent Sorteios (protocolo LucentDraw/2).
 
 Segunda implementação, independente da página HTML, do algoritmo de conferência
 (SPEC, seção 9). Usa apenas a biblioteca padrão do Python; o pacote `requests`
@@ -1455,7 +1455,7 @@ def format_report(rep: dict) -> str:
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Confere um certificado do SorteioLúcido (LucentDraw/2 ou /1).")
+    ap = argparse.ArgumentParser(description="Confere um certificado do Lucent Sorteios (LucentDraw/2 ou /1).")
     ap.add_argument("certificate", help="arquivo JSON do certificado (ou - para entrada padrão)")
     ap.add_argument("--rpc", action="append", help="endpoint JSON-RPC Ethereum (pode repetir)")
     ap.add_argument("--relay", help="URL do relay (para resultados de loteria)")

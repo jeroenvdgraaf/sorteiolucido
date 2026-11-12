@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SorteioLúcido</title>
+<title>Lucent Sorteios</title>
 <!-- Cliente drand fixado por versão E por hash de conteúdo: o navegador recusa uma cópia alterada. -->
 <script type="importmap">
 {
@@ -501,7 +501,7 @@ const STR = {
   passMeans1: "A ordem decorre da lista lacrada e de valores aleatórios públicos que ninguém podia escolher depois de ver a lista.",
   passMeans2: "O que o programa não prova sozinho: que o lacre foi divulgado antes da aleatoriedade. Os carimbos de tempo servem de prova; sem eles, confira onde e quando o lacre foi publicado.",
   passMeans3: "O valor drand é conferido com a chave pública da quicknet. Para o bloco Ethereum, a página confere que ele é o primeiro após o lacre e que continua na cadeia canônica, usando os servidores listados; para independência total, use o seu próprio nó.",
-  footer: "SorteioLúcido · protocolo LucentDraw/2 · parte da família LucentCrypto. Funciona no seu navegador, sem chaves, sem cadastro e sem estatísticas de uso. A página só faz pedidos às fontes de aleatoriedade (servidores Ethereum listados, drand, Caixa), à biblioteca drand-client fixada por hash e ao relay, se você configurar um.",
+  footer: "Lucent Sorteios · protocolo LucentDraw/2 · parte da família LucentCrypto. Funciona no seu navegador, sem chaves, sem cadastro e sem estatísticas de uso. A página só faz pedidos às fontes de aleatoriedade (servidores Ethereum listados, drand, Caixa), à biblioteca drand-client fixada por hash e ao relay, se você configurar um.",
   // Conferência (SPEC 9)
   ck: {
     parseNoSpec: "O certificado não tem o objeto spec.",
@@ -602,7 +602,7 @@ const STR = {
     seed: "Semente",
     order: "Resultado (ordem sorteada)",
     howTitle: "Como conferir",
-    how: (file) => "Qualquer pessoa pode conferir este sorteio sem confiar em quem o organizou. Abra o SorteioLúcido, vá à aba Conferir e carregue o certificado (" + file + "); ou rode \"python3 verify_draw.py " + file + "\". A conferência recalcula o lacre, busca de novo os valores nas fontes públicas e refaz a ordem pela regra publicada. Um segundo lacre com o mesmo ID invalida o sorteio.",
+    how: (file) => "Qualquer pessoa pode conferir este sorteio sem confiar em quem o organizou. Abra o Lucent Sorteios, vá à aba Conferir e carregue o certificado (" + file + "); ou rode \"python3 verify_draw.py " + file + "\". A conferência recalcula o lacre, busca de novo os valores nas fontes públicas e refaz a ordem pela regra publicada. Um segundo lacre com o mesmo ID invalida o sorteio.",
   },
 };
 
@@ -1342,9 +1342,9 @@ $("ruleCode").textContent = [
 
 // ---- armazenamento local (sempre em try/catch)
 const LS = {
-  get(k, d) { try { const v = localStorage.getItem("sorteiolucido." + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem("sorteiolucido." + k, JSON.stringify(v)); return true; } catch { return false; } },
-  del(k) { try { localStorage.removeItem("sorteiolucido." + k); } catch {} },
+  get(k, d) { try { const v = localStorage.getItem("lucentsorteios." + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("lucentsorteios." + k, JSON.stringify(v)); return true; } catch { return false; } },
+  del(k) { try { localStorage.removeItem("lucentsorteios." + k); } catch {} },
 };
 
 // ---- tema

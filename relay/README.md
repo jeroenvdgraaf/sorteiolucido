@@ -1,4 +1,4 @@
-# Relay de carimbo de tempo (SorteioLúcido)
+# Relay de carimbo de tempo (Lucent Sorteios)
 
 Servidor mínimo da SPEC 6.2, escrito como Cloudflare Worker. Navegadores não conseguem falar
 diretamente com servidores RFC 3161 nem com as agendas do OpenTimestamps; o relay só repassa
@@ -40,18 +40,18 @@ Requer uma conta Cloudflare (o plano gratuito basta) e Node.js 18 ou mais novo.
 ```sh
 cd relay
 npx wrangler@3 login          # abre o navegador para autorizar
-npx wrangler@3 deploy         # publica; mostra a URL, ex.: https://sorteiolucido-relay.<conta>.workers.dev
+npx wrangler@3 deploy         # publica; mostra a URL, ex.: https://lucent-sorteios-relay.<conta>.workers.dev
 ```
 
 Teste rápido depois de publicar:
 
 ```sh
-curl -s -X POST https://sorteiolucido-relay.<conta>.workers.dev/v1/timestamp \
+curl -s -X POST https://lucent-sorteios-relay.<conta>.workers.dev/v1/timestamp \
   -H 'content-type: application/json' \
   -d '{"hash":"d6af4d8f3b6126c60afbc36e4f21d987f940e9c53b7ce230c135e026d88518fa"}'
 ```
 
-Depois, no SorteioLúcido, abra **Detalhes técnicos** e cole a URL em **Relay de carimbo de tempo**.
+Depois, no Lucent Sorteios, abra **Detalhes técnicos** e cole a URL em **Relay de carimbo de tempo**.
 
 Para rodar localmente: `npx wrangler@3 dev` (porta 8787).
 
